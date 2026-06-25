@@ -793,3 +793,227 @@ h3 {
     grid-template-columns: 1fr;
   }
 }
+
+/* V7: compact session editing and clearer feedback view */
+.session-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.session-card em {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: inherit;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+  opacity: 0;
+  transform: translateY(-3px);
+  transition: 0.15s ease;
+}
+
+.session-card:hover em {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.edit-session-card {
+  width: min(680px, 100%);
+  margin: 0 auto;
+}
+
+.session-edit-meta {
+  color: var(--muted);
+  margin: 6px 0 0;
+  font-weight: 700;
+}
+
+.feedback-card {
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+.feedback-picker-panel,
+.feedback-form,
+.feedback-review-panel {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+  margin-bottom: 14px;
+}
+
+.feedback-picker-panel h4,
+.feedback-form-title-row h4,
+.feedback-review-panel-head h4 {
+  color: #08265a;
+  font-size: 18px;
+  margin: 0 0 4px;
+}
+
+.feedback-picker-panel p,
+.feedback-form-title-row p,
+.feedback-review-panel-head p {
+  color: var(--muted);
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.feedback-session-picker {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.feedback-session-pill {
+  border: 1px solid #dbeafe;
+  border-radius: 999px;
+  padding: 9px 13px;
+  background: linear-gradient(135deg, #f8fbff, #eff6ff);
+  color: #1e3a8a;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+}
+
+.feedback-session-pill small {
+  display: block;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.feedback-session-pill.active {
+  color: #ffffff;
+  border-color: #ff8a1f;
+  background: linear-gradient(135deg, #ff9f26, #ff7f0f);
+  box-shadow: 0 8px 18px rgba(255, 127, 15, 0.24);
+}
+
+.feedback-session-pill.active small {
+  color: #fff7ed;
+}
+
+.feedback-cards {
+  display: grid;
+  gap: 14px;
+}
+
+.feedback-review-card {
+  border: 1px solid #dbe4f0;
+  border-radius: 16px;
+  padding: 14px;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  box-shadow: 0 10px 24px rgba(15, 35, 70, 0.06);
+}
+
+.feedback-review-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.feedback-review-head strong {
+  display: block;
+  color: #08265a;
+  font-size: 18px;
+}
+
+.feedback-review-head span {
+  display: block;
+  color: var(--muted);
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.feedback-review-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.feedback-meta-grid,
+.feedback-score-grid,
+.feedback-text-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.feedback-meta-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.feedback-score-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.feedback-text-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.feedback-meta-grid span,
+.feedback-score-grid span,
+.feedback-text-grid section {
+  border: 1px solid #e7edf5;
+  border-radius: 12px;
+  padding: 10px;
+  background: #ffffff;
+  min-width: 0;
+}
+
+.feedback-meta-grid b,
+.feedback-text-grid b {
+  display: block;
+  color: #08265a;
+  margin-bottom: 6px;
+}
+
+.feedback-text-grid p {
+  color: #526174;
+  line-height: 1.7;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.score-badge {
+  float: right;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.empty-feedback-state {
+  border: 1px dashed #cbd5e1;
+  border-radius: 14px;
+  padding: 18px;
+  text-align: center;
+  color: var(--muted);
+  background: #f8fafc;
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .feedback-meta-grid,
+  .feedback-score-grid,
+  .feedback-text-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .feedback-review-head {
+    flex-direction: column;
+  }
+}

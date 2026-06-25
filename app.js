@@ -22,6 +22,9 @@ let prefillStudentId = null;
 let authRenderPromise = null;
 let cleanupIntervalId = null;
 let downloadTargetStudentId = null;
+let editingSessionId = null;
+let editingFeedbackId = null;
+let selectedFeedbackSessionKey = "all";
 
 const scheduleTable = document.getElementById("scheduleTable");
 const studentsTableBody = document.getElementById("studentsTableBody");
@@ -32,6 +35,8 @@ const studentForm = document.getElementById("studentForm");
 const feedbackForm = document.getElementById("feedbackForm");
 const downloadModal = document.getElementById("downloadModal");
 const downloadForm = document.getElementById("downloadForm");
+const editSessionModal = document.getElementById("editSessionModal");
+const editSessionForm = document.getElementById("editSessionForm");
 const sessionDay = document.getElementById("sessionDay");
 const sessionHour = document.getElementById("sessionHour");
 const studentCourse = document.getElementById("studentCourse");
@@ -165,6 +170,34 @@ function getSessionsForStudent(studentId) {
 
 function getFeedbackForStudent(studentId) {
   return state.feedback.filter(item => item.student_id === studentId);
+}
+
+
+function getSessionById(sessionId) {
+  return state.sessions.find(session => String(session.id) === String(sessionId));
+}
+
+function getFeedbackById(feedbackId) {
+  return state.feedback.find(item => String(item.id) === String(feedbackId));
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function sessionKeyFromValue(value) {
+  const num = extractSessionNumber(value);
+  return num === null ? String(value || "unknown").trim().toLowerCase() : `number:${num}`;
+}
+
+function sessionLabelFromValue(value) {
+  const num = extractSessionNumber(value);
+  return num === null ? String(value || "Unknown session") : `Session ${num}`;
 }
 
 function extractSessionNumber(value) {
@@ -414,10 +447,11 @@ function renderSchedule() {
           if (!matchesSearch) continue;
 
           html += `
-            <button class="session-card type-${session.type}" data-student-id="${student.id}">
+            <button class="session-card type-${session.type}" data-session-id="${session.id}" data-student-id="${student.id}" title="Click to edit this session">
               <strong>${student.name}</strong>
               <span>${session.course} · Session ${session.current_session}</span>
               <span>${TYPE_LABELS[session.type]} · ${sessionPrice(session)} LE</span>
+              <em>Edit</em>
             </button>
           `;
         }
@@ -442,7 +476,7 @@ function renderSchedule() {
   });
 
   document.querySelectorAll(".session-card").forEach(card => {
-    card.addEventListener("click", () => openDetails(card.dataset.studentId));
+    card.addEventListener("click", () => openEditSession(card.dataset.sessionId));
   });
 }
 
@@ -686,9 +720,16 @@ function renderDetails(studentId) {
       <td>${formatHour(Number(session.hour))}</td>
       <td>${TYPE_LABELS[session.type]}</td>
       <td>${sessionPrice(session)} LE</td>
-      <td><button class="danger-btn" data-delete-session="${session.id}">Delete</button></td>
+      <td class="actions-cell">
+        <button class="small-btn" data-edit-session="${session.id}">Edit</button>
+        <button class="danger-btn" data-delete-session="${session.id}">Delete</button>
+      </td>
     </tr>
   `).join("");
+
+  document.querySelectorAll("[data-edit-session]").forEach(btn => {
+    btn.addEventListener("click", () => openEditSession(btn.dataset.editSession));
+  });
 
   document.querySelectorAll("[data-delete-session]").forEach(btn => {
     btn.addEventListener("click", async () => {
@@ -706,6 +747,66 @@ function renderDetails(studentId) {
   });
 }
 
+function openEditSession(sessionId) {
+  const session = getSessionById(sessionId);
+  if (!session || !editSessionModal) return;
+
+  const student = getStudent(session.student_id);
+  editingSessionId = session.id;
+
+  document.getElementById("editSessionStudentName").textContent = student?.name || "Edit Session";
+  document.getElementById("editSessionMeta").textContent = `${session.day} · ${formatHour(Number(session.hour))}`;
+  document.getElementById("editSessionNumber").value = session.current_session || "";
+  document.getElementById("editSessionCourse").value = session.course || "";
+  document.getElementById("editSessionType").value = session.type || "paid";
+
+  editSessionModal.showModal();
+}
+
+function closeEditSession() {
+  editingSessionId = null;
+  editSessionModal?.close();
+}
+
+async function handleEditSessionSubmit(event) {
+  event.preventDefault();
+  if (!editingSessionId) return;
+
+  const session = getSessionById(editingSessionId);
+  if (!session) return;
+
+  const course = document.getElementById("editSessionCourse").value.trim();
+  const type = document.getElementById("editSessionType").value;
+  const currentSession = document.getElementById("editSessionNumber").value.trim();
+
+  if (!course || !currentSession) {
+    alert("Please fill course and session number.");
+    return;
+  }
+
+  const expiryData = getSessionDateAndExpiry(type, session.day, session.hour);
+
+  const { error } = await client
+    .from("sessions")
+    .update({
+      course,
+      type,
+      current_session: currentSession,
+      session_date: expiryData.session_date,
+      expires_at: expiryData.expires_at,
+    })
+    .eq("id", editingSessionId);
+
+  if (error) {
+    console.error(error);
+    alert("Could not update this session. Check Supabase settings.");
+    return;
+  }
+
+  closeEditSession();
+  await refreshData();
+}
+
 function closeDetails() {
   selectedStudentId = null;
   detailsModal.close();
@@ -713,6 +814,8 @@ function closeDetails() {
 
 function openFeedback(studentId) {
   feedbackStudentId = studentId;
+  selectedFeedbackSessionKey = "all";
+  resetFeedbackEditState();
   renderFeedback(studentId);
   feedbackModal.showModal();
 }
@@ -725,44 +828,150 @@ function renderFeedback(studentId) {
   document.getElementById("feedbackDate").value = todayISO();
 
   const sessions = getSessionsForStudent(studentId);
-  const courseOptions = [...new Set(sessions.map(s => s.course))];
+  const feedbackItemsForCourses = getFeedbackForStudent(studentId);
+  const courseOptions = [...new Set([
+    ...sessions.map(s => s.course),
+    ...feedbackItemsForCourses.map(item => item.course),
+  ].filter(Boolean))];
 
   document.getElementById("feedbackCourse").innerHTML =
     courseOptions.length
-      ? courseOptions.map(course => `<option value="${course}">${course}</option>`).join("")
+      ? courseOptions.map(course => `<option value="${escapeHtml(course)}">${escapeHtml(course)}</option>`).join("")
       : `<option value="General">General</option>`;
 
+  renderFeedbackSessionPicker(studentId);
+  renderFeedbackCards(studentId);
+}
+
+function getFeedbackSessionOptions(studentId) {
+  const sessions = getSessionsForStudent(studentId).map(session => ({
+    key: sessionKeyFromValue(session.current_session),
+    label: sessionLabelFromValue(session.current_session),
+    value: session.current_session,
+    course: session.course,
+    source: "schedule",
+  }));
+
+  const feedbackItems = getFeedbackForStudent(studentId).map(item => ({
+    key: sessionKeyFromValue(item.session_number),
+    label: sessionLabelFromValue(item.session_number),
+    value: item.session_number,
+    course: item.course,
+    source: "feedback",
+  }));
+
+  const byKey = new Map();
+  [...sessions, ...feedbackItems].forEach(option => {
+    if (!byKey.has(option.key)) byKey.set(option.key, option);
+  });
+
+  return [...byKey.values()].sort((a, b) => {
+    const an = extractSessionNumber(a.value);
+    const bn = extractSessionNumber(b.value);
+    if (an !== null && bn !== null) return an - bn;
+    return a.label.localeCompare(b.label);
+  });
+}
+
+function renderFeedbackSessionPicker(studentId) {
+  const picker = document.getElementById("feedbackSessionPicker");
+  if (!picker) return;
+
+  const options = getFeedbackSessionOptions(studentId);
+  if (selectedFeedbackSessionKey !== "all" && !options.some(option => option.key === selectedFeedbackSessionKey)) {
+    selectedFeedbackSessionKey = "all";
+  }
+
+  picker.innerHTML = `
+    <button type="button" class="feedback-session-pill ${selectedFeedbackSessionKey === "all" ? "active" : ""}" data-feedback-session-key="all">
+      All feedback
+    </button>
+    ${options.map(option => `
+      <button type="button" class="feedback-session-pill ${selectedFeedbackSessionKey === option.key ? "active" : ""}" data-feedback-session-key="${escapeHtml(option.key)}" data-feedback-session-value="${escapeHtml(option.value)}" data-feedback-session-course="${escapeHtml(option.course || "")}">
+        ${escapeHtml(option.label)}
+        <small>${escapeHtml(option.course || "")}</small>
+      </button>
+    `).join("")}
+  `;
+
+  picker.querySelectorAll("[data-feedback-session-key]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      selectedFeedbackSessionKey = btn.dataset.feedbackSessionKey;
+      if (selectedFeedbackSessionKey !== "all") {
+        document.getElementById("feedbackSessionNumber").value = btn.dataset.feedbackSessionValue || "";
+        if (btn.dataset.feedbackSessionCourse) document.getElementById("feedbackCourse").value = btn.dataset.feedbackSessionCourse;
+      }
+      renderFeedback(studentId);
+    });
+  });
+}
+
+function getVisibleFeedbackItems(studentId) {
   const feedbackItems = getFeedbackForStudent(studentId);
-  const body = document.getElementById("feedbackTableBody");
+  if (selectedFeedbackSessionKey === "all") return feedbackItems;
+  return feedbackItems.filter(item => sessionKeyFromValue(item.session_number) === selectedFeedbackSessionKey);
+}
+
+function scoreBadge(value) {
+  return `<span class="score-badge">${value ?? "-"}/5</span>`;
+}
+
+function renderFeedbackCards(studentId) {
+  const body = document.getElementById("feedbackCards");
+  if (!body) return;
+
+  const feedbackItems = getVisibleFeedbackItems(studentId);
+  const emptyText = selectedFeedbackSessionKey === "all"
+    ? "No feedback saved yet."
+    : "No feedback saved for this selected session yet.";
 
   if (feedbackItems.length === 0) {
-    body.innerHTML = `<tr><td colspan="17">No feedback saved yet.</td></tr>`;
+    body.innerHTML = `<div class="empty-feedback-state">${emptyText}</div>`;
     return;
   }
 
   body.innerHTML = feedbackItems.map(item => `
-    <tr>
-      <td>${item.date}</td>
-      <td>${item.session_number}</td>
-      <td>${item.course}</td>
-      <td>${item.lesson_title}</td>
-      <td>${item.attendance}</td>
-      <td>${item.commitment_score ?? "-"}</td>
-      <td>${item.understanding_score ?? "-"}</td>
-      <td>${item.problem_solving_score ?? "-"}</td>
-      <td>${item.practical_score ?? "-"}</td>
-      <td>${item.exercise_score ?? "-"}</td>
-      <td>${item.participation_score ?? "-"}</td>
-      <td>${item.has_homework || "-"}</td>
-      <td>${item.previous_homework || "-"}</td>
-      <td>${item.explained || "-"}</td>
-      <td>${item.strengths || "-"}</td>
-      <td>${item.improvement_areas || "-"}</td>
-      <td><button class="danger-btn" data-delete-feedback="${item.id}">Delete</button></td>
-    </tr>
+    <article class="feedback-review-card">
+      <div class="feedback-review-head">
+        <div>
+          <strong>${escapeHtml(sessionLabelFromValue(item.session_number))}</strong>
+          <span>${escapeHtml(item.course || "General")} · ${escapeHtml(item.lesson_title || "No lesson title")}</span>
+        </div>
+        <div class="feedback-review-actions">
+          <button type="button" class="small-btn" data-edit-feedback="${item.id}">Edit</button>
+          <button type="button" class="danger-btn" data-delete-feedback="${item.id}">Delete</button>
+        </div>
+      </div>
+
+      <div class="feedback-meta-grid">
+        <span><b>Date</b>${escapeHtml(item.date || "-")}</span>
+        <span><b>Attendance</b>${escapeHtml(item.attendance || "-")}</span>
+        <span><b>Homework</b>${escapeHtml(item.has_homework || "-")}</span>
+        <span><b>Previous HW</b>${escapeHtml(item.previous_homework || "-")}</span>
+      </div>
+
+      <div class="feedback-score-grid">
+        <span>Commitment ${scoreBadge(item.commitment_score)}</span>
+        <span>Understanding ${scoreBadge(item.understanding_score)}</span>
+        <span>Problem Solving ${scoreBadge(item.problem_solving_score)}</span>
+        <span>Practical ${scoreBadge(item.practical_score)}</span>
+        <span>Exercises ${scoreBadge(item.exercise_score)}</span>
+        <span>Participation ${scoreBadge(item.participation_score)}</span>
+      </div>
+
+      <div class="feedback-text-grid">
+        <section><b>What was explained</b><p>${escapeHtml(item.explained || "-")}</p></section>
+        <section><b>Strengths</b><p>${escapeHtml(item.strengths || "-")}</p></section>
+        <section><b>Improvement areas</b><p>${escapeHtml(item.improvement_areas || "-")}</p></section>
+      </div>
+    </article>
   `).join("");
 
-  document.querySelectorAll("[data-delete-feedback]").forEach(btn => {
+  body.querySelectorAll("[data-edit-feedback]").forEach(btn => {
+    btn.addEventListener("click", () => startEditFeedback(btn.dataset.editFeedback));
+  });
+
+  body.querySelectorAll("[data-delete-feedback]").forEach(btn => {
     btn.addEventListener("click", async () => {
       const ok = confirm("Delete this feedback row?");
       if (!ok) return;
@@ -774,8 +983,45 @@ function renderFeedback(studentId) {
       }
 
       await refreshData();
+      renderFeedback(feedbackStudentId);
     });
   });
+}
+
+function startEditFeedback(feedbackId) {
+  const item = getFeedbackById(feedbackId);
+  if (!item) return;
+
+  editingFeedbackId = item.id;
+  document.getElementById("feedbackFormTitle").textContent = "Edit feedback";
+  document.getElementById("feedbackSubmitBtn").textContent = "Update Feedback";
+  document.getElementById("cancelFeedbackEditBtn").classList.remove("hidden");
+
+  document.getElementById("feedbackDate").value = item.date || todayISO();
+  document.getElementById("feedbackCourse").value = item.course || "General";
+  document.getElementById("feedbackSessionNumber").value = item.session_number || "";
+  document.getElementById("lessonTitle").value = item.lesson_title || "";
+  document.getElementById("attendance").value = item.attendance || "Present";
+  document.getElementById("commitmentScore").value = String(item.commitment_score ?? 5);
+  document.getElementById("understandingScore").value = String(item.understanding_score ?? 5);
+  document.getElementById("problemSolvingScore").value = String(item.problem_solving_score ?? 5);
+  document.getElementById("practicalScore").value = String(item.practical_score ?? 5);
+  document.getElementById("exerciseScore").value = String(item.exercise_score ?? 5);
+  document.getElementById("participationScore").value = String(item.participation_score ?? 5);
+  document.getElementById("hasHomework").value = item.has_homework || "Yes";
+  document.getElementById("previousHomework").value = item.previous_homework || "Submitted";
+  document.getElementById("explained").value = item.explained || "";
+  document.getElementById("strengths").value = item.strengths || "";
+  document.getElementById("improvementAreas").value = item.improvement_areas || "";
+
+  feedbackForm.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function resetFeedbackEditState() {
+  editingFeedbackId = null;
+  document.getElementById("feedbackFormTitle").textContent = "Add feedback";
+  document.getElementById("feedbackSubmitBtn").textContent = "Save Feedback";
+  document.getElementById("cancelFeedbackEditBtn").classList.add("hidden");
 }
 
 async function handleFeedbackSubmit(event) {
@@ -803,21 +1049,26 @@ async function handleFeedbackSubmit(event) {
     improvement_areas: document.getElementById("improvementAreas").value.trim(),
   };
 
-  const { error } = await client.from("feedback").insert(feedbackRow);
+  const result = editingFeedbackId
+    ? await client.from("feedback").update(feedbackRow).eq("id", editingFeedbackId)
+    : await client.from("feedback").insert(feedbackRow);
 
-  if (error) {
-    console.error(error);
-    alert("Could not save feedback.");
+  if (result.error) {
+    console.error(result.error);
+    alert(editingFeedbackId ? "Could not update feedback." : "Could not save feedback.");
     return;
   }
 
   feedbackForm.reset();
+  resetFeedbackEditState();
   await refreshData();
   renderFeedback(feedbackStudentId);
 }
 
 function closeFeedback() {
   feedbackStudentId = null;
+  selectedFeedbackSessionKey = "all";
+  resetFeedbackEditState();
   feedbackModal.close();
 }
 
@@ -911,6 +1162,17 @@ document.getElementById("openFeedbackFromDetailsBtn").addEventListener("click", 
 document.getElementById("deleteStudentFromDetailsBtn").addEventListener("click", () => {
   if (!selectedStudentId) return;
   deleteStudent(selectedStudentId);
+});
+
+
+document.getElementById("closeEditSessionModal")?.addEventListener("click", closeEditSession);
+document.getElementById("cancelEditSessionBtn")?.addEventListener("click", closeEditSession);
+editSessionForm?.addEventListener("submit", handleEditSessionSubmit);
+
+document.getElementById("cancelFeedbackEditBtn")?.addEventListener("click", () => {
+  feedbackForm.reset();
+  resetFeedbackEditState();
+  document.getElementById("feedbackDate").value = todayISO();
 });
 
 studentCourse.addEventListener("change", () => {

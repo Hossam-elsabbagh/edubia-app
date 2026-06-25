@@ -200,3 +200,17 @@ Upload these files to GitHub and keep your existing `config.js` unchanged.
 - Fixed PDF report page heights so cards are not clipped.
 - Moved attendance section to page 3 when session ranges are long.
 - Reduced spacing and card heights to keep every page complete in A4 export.
+
+## V7 update
+
+This version adds:
+
+- Click any booked schedule slot to edit the same fixed appointment.
+- Edit Session modal for updating current session number, course, and paid/cover/free type without changing the day/time.
+- Student Details now has an Edit button beside each session.
+- Feedback modal now shows session option chips instead of one huge wide table.
+- Feedback rows are displayed as readable cards.
+- Each feedback card has Edit and Delete buttons.
+- Editing feedback fills the existing form and updates the same row instead of creating a duplicate.
+
+No Supabase schema change is required if you already ran the V6 SQL patch, because this update uses the existing sessions and feedback tables.
