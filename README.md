@@ -194,3 +194,9 @@ After that, commit and redeploy the updated files to Vercel.
 - JSON downloads contain the selected range, student summary, sessions, and feedback rows.
 
 Upload these files to GitHub and keep your existing `config.js` unchanged.
+
+
+## V6 PDF layout fix
+- Fixed PDF report page heights so cards are not clipped.
+- Moved attendance section to page 3 when session ranges are long.
+- Reduced spacing and card heights to keep every page complete in A4 export.

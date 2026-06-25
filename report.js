@@ -28,14 +28,14 @@
       position: relative;
       overflow: hidden;
       background: #ffffff;
-      padding: 26px 34px 30px;
+      padding: 18px 34px 22px;
       direction: rtl;
     }
 
     .edubia-report-page::before {
       content: "";
       position: absolute;
-      inset: 18px 20px 18px 20px;
+      inset: 16px 20px 16px 20px;
       border-left: 2px solid #fb8500;
       border-right: 2px solid #fb8500;
       pointer-events: none;
@@ -72,9 +72,9 @@
     .edubia-corner.bl { bottom: 0; left: 0; border-bottom: 2px solid; border-left: 2px solid; border-bottom-left-radius: 8px; }
 
     .edubia-hero {
-      margin: -8px -14px 0;
-      min-height: 230px;
-      padding: 34px 42px 28px;
+      margin: -4px -14px 0;
+      min-height: 178px;
+      padding: 26px 42px 20px;
       color: #fff;
       background:
         linear-gradient(135deg, rgba(3, 28, 68, 1), rgba(7, 46, 107, 1)),
@@ -122,7 +122,7 @@
     .edubia-logo-mark { width: 58px; height: 52px; display: block; object-fit: contain; filter: drop-shadow(0 10px 22px rgba(0,0,0,.12)); }
 
     .edubia-student-title {
-      margin-top: 60px;
+      margin-top: 36px;
       text-align: right;
       position: relative;
       z-index: 1;
@@ -131,7 +131,7 @@
     .edubia-student-title h1 {
       margin: 0 0 14px;
       color: white;
-      font-size: 38px;
+      font-size: 34px;
       line-height: 1.18;
       font-weight: 900;
       letter-spacing: -0.02em;
@@ -144,11 +144,11 @@
     }
 
     .edubia-meta-row {
-      height: 92px;
+      height: 76px;
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       border-bottom: 1px solid #edf1f8;
-      margin: 0 -6px 20px;
+      margin: 0 -6px 16px;
     }
 
     .edubia-meta-item {
@@ -169,9 +169,9 @@
     .edubia-card {
       background: #fff;
       border: 1px solid #dfe6f0;
-      border-radius: 18px;
+      border-radius: 16px;
       box-shadow: 0 8px 22px rgba(15, 35, 70, .04);
-      padding: 22px;
+      padding: 18px;
     }
 
     .edubia-section-title {
@@ -181,41 +181,41 @@
       color: white;
       background: #08265a;
       border-radius: 10px;
-      padding: 10px 22px;
-      font-size: 19px;
+      padding: 9px 20px;
+      font-size: 18px;
       font-weight: 900;
-      margin-bottom: 20px;
+      margin-bottom: 14px;
     }
     .edubia-section-title::before { content: ""; width: 12px; height: 12px; border-radius: 999px; background: linear-gradient(135deg, #ffb347, #ff7a00); display: inline-block; }
 
     .edubia-title-right { text-align: right; }
     .edubia-title-left { text-align: left; }
 
-    .edubia-skill { margin: 0 0 17px; }
-    .edubia-skill-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .edubia-skill { margin: 0 0 13px; }
+    .edubia-skill-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
     .edubia-skill-name { font-weight: 900; font-size: 16px; color: #17233d; }
     .edubia-score-pill { background: #21a45b; color: white; border-radius: 999px; min-width: 60px; padding: 4px 12px; font-size: 13px; font-weight: 900; text-align: center; direction: ltr; }
-    .edubia-bar { height: 12px; background: #edf1f5; border-radius: 999px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.08); }
+    .edubia-bar { height: 10px; background: #edf1f5; border-radius: 999px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.08); }
     .edubia-fill { height: 100%; border-radius: 999px; background: linear-gradient(180deg, #52c57e, #1f9d58); }
 
-    .edubia-overall-card { text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 338px; }
+    .edubia-overall-card { text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 292px; }
     .edubia-donut {
-      width: 162px; height: 162px; border-radius: 50%;
+      width: 136px; height: 136px; border-radius: 50%;
       background: conic-gradient(#fb8500 var(--angle), #fee8c8 var(--angle));
       display: grid; place-items: center; margin: 6px auto 22px; position: relative;
     }
-    .edubia-donut::before { content: ""; position: absolute; inset: 18px; border-radius: 50%; background: #fff9ef; box-shadow: inset 0 0 20px rgba(255, 164, 49, .22); }
+    .edubia-donut::before { content: ""; position: absolute; inset: 15px; border-radius: 50%; background: #fff9ef; box-shadow: inset 0 0 20px rgba(255, 164, 49, .22); }
     .edubia-donut-inner { position: relative; z-index: 1; text-align: center; direction: rtl; }
-    .edubia-donut-score { color: #fb8500; font-size: 46px; font-weight: 900; line-height: 1; direction: ltr; }
+    .edubia-donut-score { color: #fb8500; font-size: 38px; font-weight: 900; line-height: 1; direction: ltr; }
     .edubia-donut-sub { color: #687590; font-size: 12px; font-weight: 900; margin: 4px 0; }
     .edubia-stars { color: #fb8500; letter-spacing: 2px; font-size: 16px; direction: ltr; }
     .edubia-overall-label { font-weight: 900; font-size: 20px; margin-bottom: 10px; }
     .edubia-ribbon { color: white; background: linear-gradient(135deg, #ffbd73, #f27c0b); padding: 7px 26px; font-size: 15px; font-weight: 900; clip-path: polygon(10% 0, 90% 0, 100% 50%, 90% 100%, 10% 100%, 0 50%); }
 
     .edubia-dark-strip {
-      margin: 28px 0 22px;
-      padding: 24px 28px;
-      min-height: 135px;
+      margin: 18px 0 16px;
+      padding: 18px 24px;
+      min-height: 112px;
       border-radius: 20px;
       background: linear-gradient(135deg, #061c43, #0b3670);
       color: #fff;
@@ -227,36 +227,36 @@
       overflow: hidden;
     }
     .edubia-dark-strip > * { position: relative; z-index: 1; }
-    .edubia-pace-box { border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.05); border-radius: 14px; min-height: 90px; display: grid; place-items: center; text-align: center; }
+    .edubia-pace-box { border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.05); border-radius: 14px; min-height: 78px; display: grid; place-items: center; text-align: center; }
     .edubia-pace-box strong { color: #ff9f2d; font-size: 26px; font-weight: 900; direction: ltr; }
     .edubia-pace-box span { display:block; color:#b8c3d8; font-size: 13px; font-weight: 800; }
-    .edubia-strip-text { font-size: 16px; font-weight: 800; line-height: 1.8; color: #f6f8ff; }
+    .edubia-strip-text { font-size: 14px; font-weight: 800; line-height: 1.8; color: #f6f8ff; }
     .edubia-rank-box { text-align: center; color: #ff9420; font-weight: 900; }
     .edubia-rank-box .trophy { font-size: 37px; display: block; line-height: 1; }
-    .edubia-rank-box .rank { font-size: 39px; line-height: 1; direction: ltr; }
+    .edubia-rank-box .rank { font-size: 34px; line-height: 1; direction: ltr; }
     .edubia-rank-box .rank-caption { font-size: 13px; color: #ffd8a5; }
 
-    .edubia-summary-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; direction: ltr; }
+    .edubia-summary-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; direction: ltr; }
     .edubia-summary-cards > * { direction: rtl; }
-    .edubia-mini-card { border: 1px solid #dfe6ef; border-radius: 16px; padding: 18px; min-height: 142px; box-shadow: 0 10px 20px rgba(15, 35, 70, .04); border-right: 4px solid #ffac47; position: relative; }
-    .edubia-mini-icon { position: absolute; right: 18px; top: 18px; width: 38px; height: 38px; background: #fff5e9; border-radius: 13px; display: grid; place-items: center; font-size: 22px; }
-    .edubia-mini-card span { display: block; margin-top: 56px; color: #7d879d; font-size: 14px; font-weight: 800; }
-    .edubia-mini-card strong { display: block; margin: 8px 0 0; color: #062658; font-size: 31px; font-weight: 900; direction: ltr; text-align: right; }
+    .edubia-mini-card { border: 1px solid #dfe6ef; border-radius: 16px; padding: 14px; min-height: 112px; box-shadow: 0 10px 20px rgba(15, 35, 70, .04); border-right: 4px solid #ffac47; position: relative; }
+    .edubia-mini-icon { position: absolute; right: 14px; top: 14px; width: 32px; height: 32px; background: #fff5e9; border-radius: 13px; display: grid; place-items: center; font-size: 22px; }
+    .edubia-mini-card span { display: block; margin-top: 40px; color: #7d879d; font-size: 14px; font-weight: 800; }
+    .edubia-mini-card strong { display: block; margin: 5px 0 0; color: #062658; font-size: 27px; font-weight: 900; direction: ltr; text-align: right; }
     .edubia-mini-card small { color: #7d879d; font-weight: 800; }
 
-    .edubia-page-body { padding: 20px 24px; }
-    .edubia-table-card { padding: 22px; }
+    .edubia-page-body { padding: 14px 20px 0; }
+    .edubia-table-card { padding: 18px; }
     .edubia-lessons-table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 12px; font-size: 14px; }
-    .edubia-lessons-table th { background: #062658; color: #fff; padding: 14px; font-weight: 900; text-align: right; }
-    .edubia-lessons-table td { padding: 13px 14px; border-bottom: 1px solid #ecf0f6; background: #fff; font-weight: 800; color: #28344c; }
+    .edubia-lessons-table th { background: #062658; color: #fff; padding: 11px 12px; font-weight: 900; text-align: right; }
+    .edubia-lessons-table td { padding: 10px 12px; border-bottom: 1px solid #ecf0f6; background: #fff; font-weight: 800; color: #28344c; }
     .edubia-lessons-table tr:nth-child(even) td { background: #f8fafc; }
     .edubia-grade-pill { display: inline-flex; min-width: 42px; justify-content: center; align-items: center; padding: 4px 10px; border-radius: 999px; color: white; font-weight: 900; background: #21a45b; direction: ltr; }
     .edubia-star { color: #f5a008; font-size: 18px; }
-    .edubia-final-grade { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; background: #fffaf2; border: 1px solid #f1e3d1; border-radius: 14px; padding: 16px 20px; font-size: 18px; font-weight: 900; }
-    .edubia-grade-square { background: linear-gradient(135deg, #ffbd73, #f27c0b); color: white; width: 58px; height: 58px; border-radius: 13px; display: grid; place-items: center; font-size: 22px; font-weight: 900; direction: ltr; box-shadow: 0 10px 18px rgba(245, 132, 20, .2); }
+    .edubia-final-grade { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; background: #fffaf2; border: 1px solid #f1e3d1; border-radius: 14px; padding: 16px 20px; font-size: 18px; font-weight: 900; }
+    .edubia-grade-square { background: linear-gradient(135deg, #ffbd73, #f27c0b); color: white; width: 52px; height: 52px; border-radius: 13px; display: grid; place-items: center; font-size: 22px; font-weight: 900; direction: ltr; box-shadow: 0 10px 18px rgba(245, 132, 20, .2); }
 
-    .edubia-chart-card, .edubia-attendance-card, .edubia-advice-card, .edubia-scale-card { margin-top: 22px; }
-    .edubia-chart-wrap { height: 245px; position: relative; direction: ltr; }
+    .edubia-chart-card, .edubia-attendance-card, .edubia-advice-card, .edubia-scale-card { margin-top: 16px; }
+    .edubia-chart-wrap { height: 190px; position: relative; direction: ltr; }
     .edubia-chart-wrap svg { width: 100%; height: 100%; display: block; }
     .edubia-chart-labels { display: flex; justify-content: space-between; color: #8a94a8; font-size: 12px; font-weight: 700; direction: rtl; }
 
@@ -264,32 +264,32 @@
     .edubia-attendance-grid > * { direction: rtl; }
     .edubia-rating-lines { font-weight: 800; color: #17233d; line-height: 2.3; }
     .edubia-rating-lines .stars { color: #fb8500; direction: ltr; display: inline-block; margin-inline-start: 12px; letter-spacing: 2px; }
-    .edubia-attendance-stat { border: 1px solid #e3e9f2; border-radius: 14px; min-height: 80px; display: grid; place-items: center; text-align: center; color: #66728c; font-weight: 800; }
-    .edubia-attendance-stat strong { color: #08265a; font-size: 30px; direction: ltr; }
+    .edubia-attendance-stat { border: 1px solid #e3e9f2; border-radius: 14px; min-height: 68px; display: grid; place-items: center; text-align: center; color: #66728c; font-weight: 800; }
+    .edubia-attendance-stat strong { color: #08265a; font-size: 26px; direction: ltr; }
     .edubia-attendance-stat.present strong { color: #18a457; }
     .edubia-attendance-stat.absent strong { color: #e53e3e; }
 
-    .edubia-note-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; direction: ltr; }
+    .edubia-note-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; direction: ltr; }
     .edubia-note-grid > * { direction: rtl; }
-    .edubia-note { min-height: 185px; padding: 20px; border-radius: 18px; border: 1px solid #e3e8f0; }
+    .edubia-note { min-height: 165px; padding: 17px; border-radius: 18px; border: 1px solid #e3e8f0; }
     .edubia-note.green { background: linear-gradient(180deg, #f3fff9, #f7fffb); border-color: #cfeee0; }
     .edubia-note.red { background: linear-gradient(180deg, #fff7f7, #fffafa); border-color: #f0d2d2; }
     .edubia-note.blue { background: linear-gradient(180deg, #f7fbff, #ffffff); border-color: #d9e4f3; }
     .edubia-note.orange { background: linear-gradient(180deg, #fffaf2, #ffffff); border-color: #f1dfca; }
-    .edubia-note h3 { margin: 0 0 15px; color: #08265a; font-size: 18px; font-weight: 900; }
-    .edubia-note p { margin: 0; color: #5d6678; font-size: 15px; font-weight: 700; line-height: 1.9; }
-    .edubia-bullets { margin: 0; padding: 0 18px 0 0; color: #5d6678; font-weight: 700; line-height: 1.8; }
+    .edubia-note h3 { margin: 0 0 10px; color: #08265a; font-size: 17px; font-weight: 900; }
+    .edubia-note p { margin: 0; color: #5d6678; font-size: 13px; font-weight: 700; line-height: 1.65; }
+    .edubia-bullets { margin: 0; padding: 0 18px 0 0; color: #5d6678; font-weight: 700; line-height: 1.55; font-size: 13px; }
     .edubia-bullets li { margin-bottom: 8px; }
     .edubia-bullets li::marker { color: #fb8500; }
 
     .edubia-badge-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; direction: ltr; }
     .edubia-badge-grid > * { direction: rtl; }
-    .edubia-badge { display: grid; grid-template-columns: 56px 1fr; gap: 14px; align-items: center; border: 1px solid #f0dfca; background: #fffdf9; border-radius: 16px; padding: 16px; min-height: 112px; }
-    .edubia-badge-icon { width: 56px; height: 56px; border-radius: 15px; background: linear-gradient(135deg, #ffbd73, #f27c0b); color: white; font-size: 27px; display: grid; place-items: center; }
+    .edubia-badge { display: grid; grid-template-columns: 50px 1fr; gap: 12px; align-items: center; border: 1px solid #f0dfca; background: #fffdf9; border-radius: 16px; padding: 14px; min-height: 96px; }
+    .edubia-badge-icon { width: 50px; height: 50px; border-radius: 15px; background: linear-gradient(135deg, #ffbd73, #f27c0b); color: white; font-size: 27px; display: grid; place-items: center; }
     .edubia-badge strong { display: block; color: #08265a; font-size: 18px; font-weight: 900; margin-bottom: 4px; }
     .edubia-badge span { color: #69748b; font-weight: 700; line-height: 1.55; font-size: 13px; }
 
-    .edubia-progress-box { border: 1px solid #e1e8f1; border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+    .edubia-progress-box { border: 1px solid #e1e8f1; border-radius: 16px; padding: 16px; margin-bottom: 14px; }
     .edubia-course-head { display: flex; justify-content: space-between; align-items: center; font-weight: 900; margin-bottom: 14px; }
     .edubia-progress-pill { background: linear-gradient(135deg, #ffbd73, #f27c0b); color: white; border-radius: 999px; padding: 5px 16px; font-weight: 900; font-size: 12px; }
     .edubia-progress-bar { height: 8px; background: #edf1f6; border-radius: 999px; overflow: hidden; margin-bottom: 12px; direction: ltr; }
@@ -298,21 +298,28 @@
 
     .edubia-tips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; direction: ltr; }
     .edubia-tips > * { direction: rtl; }
-    .edubia-tip { border: 1px solid #e2e9f2; border-radius: 16px; padding: 20px 14px; min-height: 155px; text-align: center; background: linear-gradient(180deg, #fff, #f8fbff); }
+    .edubia-tip { border: 1px solid #e2e9f2; border-radius: 16px; padding: 14px 12px; min-height: 128px; text-align: center; background: linear-gradient(180deg, #fff, #f8fbff); }
     .edubia-tip-icon { font-size: 26px; margin-bottom: 10px; }
     .edubia-tip strong { display: block; color: #08265a; font-weight: 900; margin-bottom: 8px; }
     .edubia-tip p { margin: 0; color: #707a8f; font-weight: 700; line-height: 1.5; font-size: 13px; }
 
     .edubia-grade-scale { display: grid; grid-template-columns: repeat(9, 1fr); gap: 8px; direction: ltr; }
-    .edubia-scale-item { border: 1px solid #e1e8f1; border-radius: 10px; padding: 9px 4px; text-align: center; background: white; }
+    .edubia-scale-item { border: 1px solid #e1e8f1; border-radius: 10px; padding: 7px 3px; text-align: center; background: white; }
     .edubia-scale-grade { color: white; border-radius: 9px; padding: 5px 0; font-weight: 900; font-size: 13px; margin-bottom: 5px; direction: ltr; }
     .edubia-scale-range { color: #7c879b; font-size: 11px; font-weight: 800; direction: ltr; }
     .g-green { background: #1fa463; } .g-yellow { background: #efaa0a; } .g-red { background: #ef5252; }
 
-    .edubia-footer { position: absolute; bottom: 28px; right: 60px; left: 60px; border-top: 1px solid #edf1f6; padding-top: 12px; display: flex; justify-content: space-between; color: #7c879b; font-size: 12px; font-weight: 800; z-index: 2; }
+    .edubia-footer { margin-top: 14px; border-top: 1px solid #edf1f6; padding-top: 10px; display: flex; justify-content: space-between; color: #7c879b; font-size: 11px; font-weight: 800; z-index: 2; }
 
     .edubia-page-plain .edubia-section-title { margin-bottom: 22px; }
-    .edubia-page-plain .edubia-card { margin-bottom: 18px; }
+    .edubia-page-plain .edubia-card { margin-bottom: 14px; }
+
+
+    .edubia-next-page .edubia-card { padding: 17px; }
+    .edubia-next-page h3 { line-height: 1.25; }
+    .edubia-next-page .edubia-section-title { margin-bottom: 12px; }
+    .edubia-report-page .edubia-card,
+    .edubia-report-page .edubia-note { break-inside: avoid; }
   `;
 
   function addStyleOnce() {
@@ -423,6 +430,12 @@
   function splitText(text, fallback) {
     const value = String(text || fallback || "").trim();
     return value.split(/\n|\.|،|-/).map(item => item.trim()).filter(Boolean).slice(0, 3);
+  }
+
+  function limitText(text, maxLength = 230) {
+    const value = String(text || "").trim().replace(/\s+/g, " ");
+    if (value.length <= maxLength) return value;
+    return `${value.slice(0, maxLength).trim()}...`;
   }
 
   function lessonAverage(item) {
@@ -708,8 +721,12 @@
             <div class="edubia-title-right"><div class="edubia-section-title">تطوّر الأداء عبر الجلسات</div></div>
             ${renderChart(metrics)}
           </section>
+        </div>
+      </div>
 
-          <section class="edubia-card edubia-attendance-card">
+      <div class="edubia-report-page edubia-page-plain">
+        <div class="edubia-report-content edubia-page-body">
+          <section class="edubia-card edubia-attendance-card" style="margin-top:0; margin-bottom:16px;">
             <div class="edubia-title-right"><div class="edubia-section-title">الحضور والانضباط</div></div>
             <div class="edubia-attendance-grid">
               <div class="edubia-rating-lines">
@@ -721,16 +738,12 @@
               <div class="edubia-attendance-stat present"><div><strong>${escapeHtml(metrics.present)}</strong><br>حاضر</div></div>
             </div>
           </section>
-        </div>
-      </div>
 
-      <div class="edubia-report-page edubia-page-plain">
-        <div class="edubia-report-content edubia-page-body">
           <section class="edubia-note-grid">
             <div class="edubia-note green"><h3>💪 نقاط القوة</h3>${renderList(metrics.strengths)}</div>
             <div class="edubia-note red"><h3>🎯 مجالات التحسين</h3>${renderList(metrics.improvements)}</div>
-            <div class="edubia-note blue"><h3>📝 ملاحظات المعلم</h3><p>${escapeHtml(teacherNote || "تم حفظ بيانات المتابعة وسيتم تحديث الملاحظات بعد الجلسة القادمة.")}</p></div>
-            <div class="edubia-note orange"><h3>📌 الخطوة الجاية</h3><p>${escapeHtml(nextStep)}</p></div>
+            <div class="edubia-note blue"><h3>📝 ملاحظات المعلم</h3><p>${escapeHtml(limitText(teacherNote || "تم حفظ بيانات المتابعة وسيتم تحديث الملاحظات بعد الجلسة القادمة.", 260))}</p></div>
+            <div class="edubia-note orange"><h3>📌 الخطوة الجاية</h3><p>${escapeHtml(limitText(nextStep, 210))}</p></div>
           </section>
 
           <section class="edubia-card" style="margin-top:24px;">
@@ -744,7 +757,7 @@
         </div>
       </div>
 
-      <div class="edubia-report-page edubia-page-plain">
+      <div class="edubia-report-page edubia-page-plain edubia-next-page">
         <div class="edubia-report-content edubia-page-body">
           <section class="edubia-card">
             <div class="edubia-title-right"><div class="edubia-section-title">ماذا بعد؟</div></div>
