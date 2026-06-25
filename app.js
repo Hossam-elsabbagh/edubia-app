@@ -3,13 +3,24 @@ const HOURS = [14, 15, 16, 17, 18, 19, 20, 21, 22];
 
 const PRICE = { paid: 150, cover: 150, free: 100 };
 const TYPE_LABELS = { paid: "Paid", cover: "Cover", free: "Free" };
+const TEMPORARY_TYPES = ["cover", "free"];
+const SESSION_DURATION_HOURS = 1;
+const SCHEDULE_DAY_INDEX = Object.fromEntries(DAYS.map((day, index) => [day, index]));
 
-const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});
 
 let state = { students: [], sessions: [], feedback: [] };
 let selectedStudentId = null;
 let feedbackStudentId = null;
 let prefillStudentId = null;
+let authRenderPromise = null;
+let cleanupIntervalId = null;
 
 const scheduleTable = document.getElementById("scheduleTable");
 const studentsTableBody = document.getElementById("studentsTableBody");
@@ -41,6 +52,99 @@ function formatHour(hour) {
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function toLocalISODate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getScheduleDayIndex(date = new Date()) {
+  // JavaScript getDay(): Sunday = 0 ... Saturday = 6.
+  // App schedule: Saturday = 0 ... Friday = 6.
+  return (date.getDay() + 1) % 7;
+}
+
+function getNextSessionStart(day, hour) {
+  const now = new Date();
+  const targetDayIndex = SCHEDULE_DAY_INDEX[day];
+  const todayIndex = getScheduleDayIndex(now);
+  let daysUntil = targetDayIndex - todayIndex;
+
+  const start = new Date(now);
+  start.setDate(now.getDate() + daysUntil);
+  start.setHours(Number(hour), 0, 0, 0);
+
+  // If the selected day/time already passed this week, save it for next week.
+  if (daysUntil < 0 || start <= now) {
+    start.setDate(start.getDate() + 7);
+  }
+
+  return start;
+}
+
+function getSessionDateAndExpiry(type, day, hour) {
+  if (!TEMPORARY_TYPES.includes(type)) {
+    return { session_date: null, expires_at: null };
+  }
+
+  const start = getNextSessionStart(day, hour);
+  const expiry = new Date(start);
+  expiry.setHours(expiry.getHours() + SESSION_DURATION_HOURS);
+
+  return {
+    session_date: toLocalISODate(start),
+    expires_at: expiry.toISOString(),
+  };
+}
+
+function isTemporarySessionExpired(session) {
+  if (!TEMPORARY_TYPES.includes(session.type)) return false;
+
+  if (session.expires_at) {
+    return new Date(session.expires_at).getTime() <= Date.now();
+  }
+
+  // Fallback for old database rows created before the expires_at column existed.
+  const todayIndex = getScheduleDayIndex();
+  const sessionDayIndex = SCHEDULE_DAY_INDEX[session.day];
+  const currentHour = new Date().getHours() + (new Date().getMinutes() / 60);
+  return sessionDayIndex < todayIndex || (sessionDayIndex === todayIndex && Number(session.hour) + SESSION_DURATION_HOURS <= currentHour);
+}
+
+async function cleanupExpiredTemporarySessions() {
+  // Preferred cleanup: safe SQL function. It can run even from the coordinator page if you grant execute to anon.
+  const rpcResult = await client.rpc("cleanup_expired_temporary_sessions");
+  if (!rpcResult.error) return;
+
+  // Fallback: authenticated admin can still clean rows directly if the RPC was not added yet.
+  const nowISO = new Date().toISOString();
+  const directResult = await client
+    .from("sessions")
+    .delete()
+    .in("type", TEMPORARY_TYPES)
+    .not("expires_at", "is", null)
+    .lte("expires_at", nowISO);
+
+  if (directResult.error) {
+    console.warn("Temporary session cleanup skipped:", rpcResult.error, directResult.error);
+  }
+}
+
+function startCleanupTimer() {
+  if (cleanupIntervalId) return;
+  cleanupIntervalId = setInterval(async () => {
+    await cleanupExpiredTemporarySessions();
+    await refreshData({ skipCleanup: true });
+  }, 60 * 1000);
+}
+
+function stopCleanupTimer() {
+  if (!cleanupIntervalId) return;
+  clearInterval(cleanupIntervalId);
+  cleanupIntervalId = null;
 }
 
 function getCoordinatorLink() {
@@ -120,7 +224,11 @@ function updateAvailableTimeOptions(preferredHour = null) {
   }
 }
 
-async function refreshData() {
+async function refreshData(options = {}) {
+  if (!options.skipCleanup) {
+    await cleanupExpiredTemporarySessions();
+  }
+
   const [studentsResult, sessionsResult, feedbackResult] = await Promise.all([
     client.from("students").select("*").order("created_at", { ascending: true }),
     client.from("sessions").select("*").order("created_at", { ascending: true }),
@@ -134,24 +242,37 @@ async function refreshData() {
   }
 
   state.students = studentsResult.data || [];
-  state.sessions = sessionsResult.data || [];
+  state.sessions = (sessionsResult.data || []).filter(session => !isTemporarySessionExpired(session));
   state.feedback = feedbackResult.data || [];
 
   renderAll();
 }
 
 async function renderAuth() {
-  const { data } = await client.auth.getSession();
-  const loggedIn = Boolean(data.session);
+  if (authRenderPromise) return authRenderPromise;
 
-  document.getElementById("loginPanel").classList.toggle("hidden", loggedIn);
-  document.getElementById("adminContent").classList.toggle("hidden", !loggedIn);
-  document.getElementById("adminActions").classList.toggle("hidden", !loggedIn);
+  authRenderPromise = (async () => {
+    const { data } = await client.auth.getSession();
+    const loggedIn = Boolean(data.session);
 
-  document.getElementById("coordinatorLinkText").textContent = getCoordinatorLink();
+    document.getElementById("loginPanel").classList.toggle("hidden", loggedIn);
+    document.getElementById("adminContent").classList.toggle("hidden", !loggedIn);
+    document.getElementById("adminActions").classList.toggle("hidden", !loggedIn);
 
-  if (loggedIn) {
-    await refreshData();
+    document.getElementById("coordinatorLinkText").textContent = getCoordinatorLink();
+
+    if (loggedIn) {
+      startCleanupTimer();
+      await refreshData();
+    } else {
+      stopCleanupTimer();
+    }
+  })();
+
+  try {
+    return await authRenderPromise;
+  } finally {
+    authRenderPromise = null;
   }
 }
 
@@ -384,6 +505,8 @@ async function handleStudentFormSubmit(event) {
   try {
     const studentId = await upsertStudentFromForm();
 
+    const { session_date, expires_at } = getSessionDateAndExpiry(type, day, hour);
+
     const { error } = await client.from("sessions").insert({
       student_id: studentId,
       day,
@@ -391,6 +514,8 @@ async function handleStudentFormSubmit(event) {
       course,
       current_session: currentSession,
       type,
+      session_date,
+      expires_at,
     });
 
     if (error) throw error;
@@ -593,11 +718,20 @@ async function downloadStudentReportById(studentId) {
 }
 
 async function login(email, password) {
+  const loginButton = document.querySelector('#loginForm button[type="submit"]');
+  loginButton.disabled = true;
+  loginButton.textContent = "Logging in...";
+
   const { error } = await client.auth.signInWithPassword({ email, password });
+
+  loginButton.disabled = false;
+  loginButton.textContent = "Login";
+
   if (error) {
     alert(error.message);
     return;
   }
+
   await renderAuth();
 }
 
@@ -673,7 +807,13 @@ studentSearch.addEventListener("input", renderSchedule);
 studentForm.addEventListener("submit", handleStudentFormSubmit);
 feedbackForm.addEventListener("submit", handleFeedbackSubmit);
 
-client.auth.onAuthStateChange(() => renderAuth());
+client.auth.onAuthStateChange(() => {
+  // Supabase can hang if async Supabase calls run directly inside this callback.
+  // Deferring renderAuth keeps login stable after refresh/re-open on Vercel.
+  setTimeout(() => {
+    renderAuth();
+  }, 0);
+});
 
 if (checkConfig()) {
   initSelects();

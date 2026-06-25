@@ -260,8 +260,8 @@ h3 {
 }
 
 .available-dot { background: #22c55e; }
-.paid-dot { background: #ef4444; }
-.cover-dot { background: #3b82f6; }
+.paid-dot { background: #3b82f6; }
+.cover-dot { background: #8b5cf6; }
 .free-dot { background: #f97316; }
 .public-session-dot { background: #8b5cf6; }
 
@@ -381,13 +381,13 @@ h3 {
 }
 
 .type-paid {
-  background: var(--red);
-  color: var(--red-text);
+  background: var(--blue);
+  color: var(--blue-text);
 }
 
 .type-cover {
-  background: var(--blue);
-  color: var(--blue-text);
+  background: var(--purple);
+  color: var(--purple-text);
 }
 
 .type-free {
@@ -398,6 +398,50 @@ h3 {
 .type-public {
   background: var(--purple);
   color: var(--purple-text);
+}
+
+.available-week-box {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.available-week-box h3 {
+  margin-bottom: 4px;
+  font-size: 20px;
+}
+
+.available-week-box p {
+  margin-bottom: 12px;
+  color: var(--muted);
+}
+
+.available-week-list {
+  display: grid;
+  gap: 8px;
+}
+
+.available-day-row {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border: 1px solid #dcfce7;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.available-day-row strong {
+  color: var(--text);
+}
+
+.available-day-row span {
+  color: var(--green-text);
+  font-weight: 700;
+  line-height: 1.5;
 }
 
 .data-table {

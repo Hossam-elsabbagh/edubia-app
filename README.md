@@ -15,7 +15,7 @@ This version is made for real deployment with a live coordinator link.
   - Read-only
   - Shows schedule and feedback only
   - Does NOT show prices
-  - Does NOT show paid/free/cover type
+  - Shows paid/free/cover status using colors
   - Auto-refreshes every 10 seconds
 
 - Data is stored in Supabase, not in local browser storage.
@@ -120,3 +120,39 @@ Send only the coordinator link to coordinators.
 - A `Download` button was also added to each student row in the admin students table.
 - The PDF is generated in the browser from the saved student feedback and schedule data, using `report.js`, `html2canvas`, and `jsPDF`.
 - The downloaded file is automatically named with the student name, for example: `تقرير الطالب Ahmed — Edubia.pdf`.
+
+---
+
+## Vercel/Supabase Patch Notes
+
+### Login fix
+
+`app.js` now avoids running async Supabase calls directly inside `onAuthStateChange`. This prevents the login/session refresh from hanging after deployment or after reopening the site.
+
+### Coordinator page changes
+
+- The coordinator schedule now shows separate colors for:
+  - Paid
+  - Cover
+  - Free
+- The page now includes an **Available time in week** block under the schedule.
+- The available block groups empty slots like:
+  - Sunday: 2 PM, 4 PM, 7 PM
+  - Monday: 3 PM, 4 PM, 5 PM
+
+### Temporary session cleanup
+
+- Paid sessions stay weekly and do not auto-delete.
+- Cover and Free sessions are treated as one-day sessions.
+- When a Cover/Free session is saved, the app stores `session_date` and `expires_at`.
+- After `expires_at`, the cleanup function deletes only expired Cover/Free rows.
+
+### Updating an existing Supabase project
+
+If you already ran the old `database.sql`, open Supabase SQL Editor and run:
+
+```sql
+-- Copy and run the full content of database_update_existing_supabase.sql
+```
+
+After that, commit and redeploy the updated files to Vercel.

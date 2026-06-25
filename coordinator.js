@@ -1,7 +1,14 @@
 const DAYS = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 const HOURS = [14, 15, 16, 17, 18, 19, 20, 21, 22];
+const TYPE_LABELS = { paid: "Paid", cover: "Cover", free: "Free" };
 
-const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});
 
 let schedule = [];
 let feedback = [];
@@ -9,6 +16,7 @@ let feedback = [];
 const scheduleTable = document.getElementById("publicScheduleTable");
 const feedbackBody = document.getElementById("publicFeedbackBody");
 const publicSearch = document.getElementById("publicSearch");
+const availableWeekList = document.getElementById("availableWeekList");
 
 function checkConfig() {
   if (SUPABASE_URL.includes("PASTE_") || SUPABASE_ANON_KEY.includes("PASTE_")) {
@@ -24,7 +32,24 @@ function formatHour(hour) {
   return `${display} ${suffix}`;
 }
 
+function getSessionsForSlot(day, hour) {
+  return schedule.filter(session => session.day === day && Number(session.hour) === Number(hour));
+}
+
+function getAvailableHours(day) {
+  return HOURS.filter(hour => getSessionsForSlot(day, hour).length === 0);
+}
+
+async function cleanupExpiredTemporarySessions() {
+  const { error } = await client.rpc("cleanup_expired_temporary_sessions");
+  if (error) {
+    // The page still works if you have not run the new SQL function yet.
+    console.warn("Temporary session cleanup skipped:", error);
+  }
+}
+
 async function loadData() {
+  await cleanupExpiredTemporarySessions();
   const [scheduleResult, feedbackResult] = await Promise.all([
     client.from("coordinator_schedule").select("*").order("hour", { ascending: true }),
     client.from("coordinator_feedback").select("*").order("created_at", { ascending: false }),
@@ -60,7 +85,7 @@ function renderSchedule() {
     html += `<tr><td class="time-cell">${formatHour(hour)}</td>`;
 
     for (const day of DAYS) {
-      const sessions = schedule.filter(session => session.day === day && Number(session.hour) === hour);
+      const sessions = getSessionsForSlot(day, hour);
       html += `<td>`;
 
       if (sessions.length === 0) {
@@ -73,11 +98,14 @@ function renderSchedule() {
 
           if (!matchesSearch) continue;
 
+          const type = session.type || "public";
+          const typeLabel = TYPE_LABELS[type] || "Scheduled";
+
           html += `
-            <div class="session-card type-public">
+            <div class="session-card type-${type}">
               <strong>${session.student_name}</strong>
               <span>${session.course} · Session ${session.current_session}</span>
-              <span>${day} · ${formatHour(Number(session.hour))}</span>
+              <span>${typeLabel} · ${day} · ${formatHour(Number(session.hour))}</span>
             </div>
           `;
         }
@@ -91,6 +119,25 @@ function renderSchedule() {
 
   html += `</tbody>`;
   scheduleTable.innerHTML = html;
+  renderAvailableWeek();
+}
+
+function renderAvailableWeek() {
+  if (!availableWeekList) return;
+
+  availableWeekList.innerHTML = DAYS.map(day => {
+    const available = getAvailableHours(day);
+    const availableText = available.length
+      ? available.map(hour => formatHour(hour)).join(", ")
+      : "No available time";
+
+    return `
+      <div class="available-day-row">
+        <strong>${day}</strong>
+        <span>${availableText}</span>
+      </div>
+    `;
+  }).join("");
 }
 
 function renderFeedback() {
