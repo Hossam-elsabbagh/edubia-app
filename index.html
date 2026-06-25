@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edubia Admin Schedule</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="top-bar">
+      <div>
+        <p class="company">Edubia Admin System</p>
+        <h1>Weekly Instructor Schedule</h1>
+        <p class="instructor">Instructor: <strong>Hossam Nabil Elsabbagh</strong></p>
+      </div>
+
+      <div class="top-actions" id="adminActions">
+        <button class="primary-btn" id="openAddStudentBtn">+ Add Student</button>
+        <button class="secondary-btn" id="openCoordinatorBtn">Open Coordinator View</button>
+        <button class="secondary-btn" id="copyCoordinatorBtn">Copy Coordinator Link</button>
+        <button class="danger-outline-btn" id="logoutBtn">Logout</button>
+      </div>
+    </section>
+
+    <section class="login-panel" id="loginPanel">
+      <div>
+        <p class="company">Admin Login</p>
+        <h2>Login to update the live schedule</h2>
+        <p>The coordinator link is read-only. Only the admin page can add students, sessions, and feedback.</p>
+      </div>
+
+      <form class="login-form" id="loginForm">
+        <input id="loginEmail" type="email" placeholder="Admin email" required />
+        <input id="loginPassword" type="password" placeholder="Password" required />
+        <button class="primary-btn" type="submit">Login</button>
+        <button class="secondary-btn" type="button" id="signupBtn">Create Admin Account</button>
+      </form>
+    </section>
+
+    <section id="adminContent" class="hidden">
+      <section class="info-box">
+        <strong>Coordinator link:</strong>
+        <span id="coordinatorLinkText"></span>
+        <p>Send this link to the coordinator. It shows the schedule and feedback only. Prices and paid/free/cover status are hidden.</p>
+      </section>
+
+      <section class="summary-grid">
+        <article class="summary-card">
+          <span>Weekly Total</span>
+          <strong id="weeklyTotal">0 LE</strong>
+        </article>
+        <article class="summary-card">
+          <span>Monthly Estimate</span>
+          <strong id="monthlyTotal">0 LE</strong>
+        </article>
+        <article class="summary-card">
+          <span>Paid / Cover / Free</span>
+          <strong id="sessionCounts">0 / 0 / 0</strong>
+        </article>
+        <article class="summary-card">
+          <span>Total Students</span>
+          <strong id="studentCount">0</strong>
+        </article>
+      </section>
+
+      <section class="legend-panel">
+        <span><i class="available-dot"></i> Available</span>
+        <span><i class="paid-dot"></i> Paid = 150 LE</span>
+        <span><i class="cover-dot"></i> Cover = 150 LE</span>
+        <span><i class="free-dot"></i> Free = 100 LE</span>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <h2>Schedule</h2>
+            <p>Saturday to Friday, from 2 PM to 10 PM. Empty green slots are available.</p>
+          </div>
+          <input id="studentSearch" class="search-input" type="search" placeholder="Search student or course..." />
+        </div>
+
+        <div class="schedule-wrapper">
+          <table class="schedule-table" id="scheduleTable"></table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <h2>Students</h2>
+            <p>Use View for profile and Feedback for session evaluation.</p>
+          </div>
+        </div>
+
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Student Name</th>
+                <th>Age</th>
+                <th>Nationality</th>
+                <th>Courses</th>
+                <th>Sessions</th>
+                <th>Total / Week</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="studentsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <dialog class="modal" id="studentModal">
+    <form method="dialog" class="modal-card" id="studentForm">
+      <div class="modal-header">
+        <div>
+          <p class="company small">Student Form</p>
+          <h3 id="studentModalTitle">Add Student</h3>
+        </div>
+        <button type="button" class="icon-btn" id="closeStudentModal">×</button>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          Student Name
+          <input id="studentName" required placeholder="Example: Mohamed Emad" />
+        </label>
+
+        <label>
+          Age
+          <input id="studentAge" type="number" min="3" max="80" placeholder="Example: 14" />
+        </label>
+
+        <label>
+          Nationality
+          <input id="studentNationality" placeholder="Example: Egyptian" />
+        </label>
+
+        <label>
+          Course
+          <select id="studentCourse" required>
+            <option value="">Select course</option>
+            <option>UI & UX</option>
+            <option>Pictoblox</option>
+            <option>Python</option>
+            <option>Scratch</option>
+            <option>Robotics</option>
+            <option>Artificial Intelligence</option>
+            <option>Other</option>
+          </select>
+        </label>
+
+        <label id="customCourseLabel" class="hidden">
+          Custom Course
+          <input id="customCourse" placeholder="Write course name" />
+        </label>
+
+        <label>
+          Session Type
+          <select id="sessionType" required>
+            <option value="paid">Paid - 150 LE</option>
+            <option value="cover">Cover - 150 LE</option>
+            <option value="free">Free - 100 LE</option>
+          </select>
+        </label>
+
+        <label>
+          Day
+          <select id="sessionDay" required></select>
+        </label>
+
+        <label>
+          Available Time
+          <select id="sessionHour" required></select>
+          <small class="hint">Only free hours appear after choosing the day.</small>
+        </label>
+
+        <label>
+          Current Session
+          <input id="currentSession" type="text" placeholder="Example: 3 or Cover 8" required />
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="secondary-btn" id="resetFormBtn">Reset</button>
+        <button type="submit" class="primary-btn">Save to Schedule</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="detailsModal">
+    <div class="modal-card wide-card">
+      <div class="modal-header">
+        <div>
+          <p class="company small">Student Details</p>
+          <h3 id="detailsName">Student Name</h3>
+        </div>
+        <button type="button" class="icon-btn" id="closeDetailsModal">×</button>
+      </div>
+
+      <div class="details-grid">
+        <article>
+          <span>Age</span>
+          <strong id="detailsAge">-</strong>
+        </article>
+        <article>
+          <span>Nationality</span>
+          <strong id="detailsNationality">-</strong>
+        </article>
+        <article>
+          <span>Weekly Total</span>
+          <strong id="detailsWeekly">0 LE</strong>
+        </article>
+        <article>
+          <span>Monthly Estimate</span>
+          <strong id="detailsMonthly">0 LE</strong>
+        </article>
+      </div>
+
+      <div class="modal-actions">
+        <button class="primary-btn" id="addSessionToStudentBtn">+ Add Session</button>
+        <button class="secondary-btn" id="openFeedbackFromDetailsBtn">Feedback</button>
+      </div>
+
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Course Name</th>
+              <th>Current Session</th>
+              <th>Day</th>
+              <th>Time</th>
+              <th>Type</th>
+              <th>Price</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="detailsSessionsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="feedbackModal">
+    <div class="modal-card feedback-card">
+      <div class="modal-header">
+        <div>
+          <p class="company small">Session Feedback</p>
+          <h3 id="feedbackStudentName">Feedback</h3>
+        </div>
+        <button type="button" class="icon-btn" id="closeFeedbackModal">×</button>
+      </div>
+
+      <form id="feedbackForm" class="feedback-form">
+        <div class="form-grid">
+          <label>
+            Date
+            <input id="feedbackDate" type="date" required />
+          </label>
+
+          <label>
+            Course
+            <select id="feedbackCourse" required></select>
+          </label>
+
+          <label>
+            Session Number
+            <input id="feedbackSessionNumber" type="text" placeholder="Example: 3 or Cover 8" required />
+          </label>
+
+          <label>
+            Lesson Title
+            <input id="lessonTitle" placeholder="Example: Variables" required />
+          </label>
+
+          <label>
+            Attendance
+            <select id="attendance">
+              <option>Present</option>
+              <option>Absent</option>
+              <option>Late</option>
+            </select>
+          </label>
+
+          <label>
+            Commitment to Time (1-5)
+            <select id="commitmentScore"></select>
+          </label>
+
+          <label>
+            Concept Understanding (1-5)
+            <select id="understandingScore"></select>
+          </label>
+
+          <label>
+            Problem Solving (1-5)
+            <select id="problemSolvingScore"></select>
+          </label>
+
+          <label>
+            Practical Application (1-5)
+            <select id="practicalScore"></select>
+          </label>
+
+          <label>
+            Exercise Completion (1-5)
+            <select id="exerciseScore"></select>
+          </label>
+
+          <label>
+            Interaction & Participation (1-5)
+            <select id="participationScore"></select>
+          </label>
+
+          <label>
+            Homework?
+            <select id="hasHomework">
+              <option>Yes</option>
+              <option>No</option>
+            </select>
+          </label>
+
+          <label>
+            Previous Homework Submission
+            <select id="previousHomework">
+              <option>Submitted</option>
+              <option>Not Submitted</option>
+              <option>Not Required</option>
+            </select>
+          </label>
+
+          <label class="full">
+            What Was Explained?
+            <textarea id="explained" placeholder="Example: Variables, loops, UI basics..."></textarea>
+          </label>
+
+          <label class="full">
+            Strengths
+            <textarea id="strengths" placeholder="Example: Fast understanding, good interaction..."></textarea>
+          </label>
+
+          <label class="full">
+            Improvement Areas
+            <textarea id="improvementAreas" placeholder="Example: Needs more focus during practice..."></textarea>
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" class="primary-btn">Save Feedback</button>
+        </div>
+      </form>
+
+      <div class="table-scroll feedback-table-wrap">
+        <table class="data-table feedback-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Session Number</th>
+              <th>Course</th>
+              <th>Lesson Title</th>
+              <th>Attendance</th>
+              <th>Commitment</th>
+              <th>Understanding</th>
+              <th>Problem Solving</th>
+              <th>Practical</th>
+              <th>Exercises</th>
+              <th>Participation</th>
+              <th>Homework?</th>
+              <th>Previous Homework</th>
+              <th>What Was Explained</th>
+              <th>Strengths</th>
+              <th>Improvement Areas</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="feedbackTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="config.js"></script>
+  <script src="report.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

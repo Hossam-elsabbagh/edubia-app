@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edubia Coordinator View</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="top-bar">
+      <div>
+        <p class="company">Edubia Coordinator View</p>
+        <h1>Schedule & Feedback</h1>
+        <p class="instructor">Instructor: <strong>Hossam Nabil Elsabbagh</strong></p>
+      </div>
+
+      <div class="top-actions">
+        <button class="secondary-btn" id="refreshBtn">Refresh</button>
+        <span class="live-note">Auto-refresh every 10 seconds</span>
+      </div>
+    </section>
+
+    <section class="info-box">
+      <strong>Read-only page</strong>
+      <p>This page shows the schedule and feedback only. Prices and private payment details are hidden.</p>
+    </section>
+
+    <section class="legend-panel">
+      <span><i class="available-dot"></i> Available</span>
+      <span><i class="public-session-dot"></i> Scheduled Session</span>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Schedule</h2>
+          <p>Saturday to Friday, from 2 PM to 10 PM.</p>
+        </div>
+        <input id="publicSearch" class="search-input" type="search" placeholder="Search student or course..." />
+      </div>
+
+      <div class="schedule-wrapper">
+        <table class="schedule-table" id="publicScheduleTable"></table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Feedback</h2>
+          <p>All saved student feedback rows.</p>
+        </div>
+      </div>
+
+      <div class="table-scroll feedback-table-wrap">
+        <table class="data-table feedback-table">
+          <thead>
+            <tr>
+              <th>Student Name</th>
+              <th>Date</th>
+              <th>Session Number</th>
+              <th>Course</th>
+              <th>Lesson Title</th>
+              <th>Attendance</th>
+              <th>Commitment</th>
+              <th>Understanding</th>
+              <th>Problem Solving</th>
+              <th>Practical</th>
+              <th>Exercises</th>
+              <th>Participation</th>
+              <th>Homework?</th>
+              <th>Previous Homework</th>
+              <th>What Was Explained</th>
+              <th>Strengths</th>
+              <th>Improvement Areas</th>
+            </tr>
+          </thead>
+          <tbody id="publicFeedbackBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="config.js"></script>
+  <script src="report.js"></script>
+  <script src="coordinator.js"></script>
+</body>
+</html>
