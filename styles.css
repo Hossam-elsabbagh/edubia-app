@@ -360,13 +360,18 @@ h3 {
 }
 
 .session-card {
-  border: 0;
+  border: 1px solid transparent;
   width: 100%;
   text-align: left;
   border-radius: 10px;
   padding: 9px;
   margin-bottom: 7px;
   cursor: pointer;
+  box-shadow: 0 5px 12px rgba(15, 23, 42, 0.04);
+}
+
+.session-card:last-child {
+  margin-bottom: 0;
 }
 
 .session-card strong {
@@ -381,23 +386,28 @@ h3 {
 }
 
 .type-paid {
-  background: var(--blue);
-  color: var(--blue-text);
+  background: #dbeafe;
+  color: #1e3a8a;
+  border-color: #60a5fa;
 }
 
-.type-cover {
-  background: var(--purple);
-  color: var(--purple-text);
+.type-cover,
+.type-covered {
+  background: #ede9fe;
+  color: #4c1d95;
+  border-color: #a78bfa;
 }
 
 .type-free {
-  background: var(--orange);
-  color: var(--orange-text);
+  background: #ffedd5;
+  color: #9a3412;
+  border-color: #fdba74;
 }
 
 .type-public {
-  background: var(--purple);
-  color: var(--purple-text);
+  background: #e0e7ff;
+  color: #3730a3;
+  border-color: #818cf8;
 }
 
 .available-week-box {
@@ -656,4 +666,35 @@ h3 {
   gap: 8px;
   justify-content: space-between;
   min-width: 190px;
+}
+
+
+.session-card.type-paid strong::after {
+  content: " Paid";
+  font-size: 11px;
+  font-weight: 800;
+  margin-left: 6px;
+}
+
+.session-card.type-cover strong::after,
+.session-card.type-covered strong::after {
+  content: " Cover";
+  font-size: 11px;
+  font-weight: 800;
+  margin-left: 6px;
+}
+
+.session-card.type-free strong::after {
+  content: " Free";
+  font-size: 11px;
+  font-weight: 800;
+  margin-left: 6px;
+}
+
+#coordinatorContent.hidden + * {
+  display: none;
+}
+
+.actions-cell .danger-btn {
+  margin-top: 6px;
 }

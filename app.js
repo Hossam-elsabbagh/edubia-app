@@ -37,7 +37,7 @@ const customCourse = document.getElementById("customCourse");
 const studentSearch = document.getElementById("studentSearch");
 
 function checkConfig() {
-  if (SUPABASE_URL.includes("PASTE_") || SUPABASE_ANON_KEY.includes("PASTE_")) {
+  if (SUPABASE_URL.includes("PASTE_") || SUPABASE_URL.includes("YOUR_") || SUPABASE_ANON_KEY.includes("PASTE_") || SUPABASE_ANON_KEY.includes("YOUR_")) {
     alert("Please open config.js and add your Supabase URL and anon key.");
     return false;
   }
@@ -259,7 +259,10 @@ async function renderAuth() {
     document.getElementById("adminContent").classList.toggle("hidden", !loggedIn);
     document.getElementById("adminActions").classList.toggle("hidden", !loggedIn);
 
-    document.getElementById("coordinatorLinkText").textContent = getCoordinatorLink();
+    const coordinatorLink = getCoordinatorLink();
+    const coordinatorLinkEl = document.getElementById("coordinatorLinkText");
+    coordinatorLinkEl.textContent = coordinatorLink;
+    coordinatorLinkEl.href = coordinatorLink;
 
     if (loggedIn) {
       startCleanupTimer();
@@ -377,6 +380,7 @@ function renderStudents() {
           <button class="small-btn" data-view-student="${student.id}">View</button>
           <button class="feedback-btn" data-feedback-student="${student.id}">Feedback</button>
           <button class="download-report-btn" data-download-student="${student.id}">Download</button>
+          <button class="danger-btn" data-delete-student="${student.id}">Delete</button>
         </td>
       </tr>
     `;
@@ -393,6 +397,37 @@ function renderStudents() {
   document.querySelectorAll("[data-download-student]").forEach(btn => {
     btn.addEventListener("click", () => downloadStudentReportById(btn.dataset.downloadStudent));
   });
+
+  document.querySelectorAll("[data-delete-student]").forEach(btn => {
+    btn.addEventListener("click", () => deleteStudent(btn.dataset.deleteStudent));
+  });
+}
+
+async function deleteStudent(studentId) {
+  const student = getStudent(studentId);
+  if (!student) return;
+
+  const ok = confirm(`Delete ${student.name} completely? This will delete all sessions and all feedback for this student.`);
+  if (!ok) return;
+
+  try {
+    const feedbackDelete = await client.from("feedback").delete().eq("student_id", studentId);
+    if (feedbackDelete.error) throw feedbackDelete.error;
+
+    const sessionsDelete = await client.from("sessions").delete().eq("student_id", studentId);
+    if (sessionsDelete.error) throw sessionsDelete.error;
+
+    const studentDelete = await client.from("students").delete().eq("id", studentId);
+    if (studentDelete.error) throw studentDelete.error;
+
+    if (String(selectedStudentId) === String(studentId)) closeDetails();
+    if (String(feedbackStudentId) === String(studentId)) closeFeedback();
+
+    await refreshData();
+  } catch (error) {
+    console.error(error);
+    alert("Could not delete the student. Check Supabase policies and try again.");
+  }
 }
 
 function renderAll() {
@@ -767,7 +802,9 @@ document.getElementById("logoutBtn").addEventListener("click", async () => {
 });
 
 document.getElementById("openCoordinatorBtn").addEventListener("click", () => {
-  window.open(getCoordinatorLink(), "_blank");
+  const link = getCoordinatorLink();
+  const opened = window.open(link, "_blank", "noopener");
+  if (!opened) window.location.href = link;
 });
 
 document.getElementById("copyCoordinatorBtn").addEventListener("click", async () => {
@@ -796,6 +833,11 @@ document.getElementById("openFeedbackFromDetailsBtn").addEventListener("click", 
   if (!selectedStudentId) return;
   detailsModal.close();
   openFeedback(selectedStudentId);
+});
+
+document.getElementById("deleteStudentFromDetailsBtn").addEventListener("click", () => {
+  if (!selectedStudentId) return;
+  deleteStudent(selectedStudentId);
 });
 
 studentCourse.addEventListener("change", () => {

@@ -119,7 +119,7 @@ begin
   current_hour := extract(hour from cairo_now) + (extract(minute from cairo_now) / 60.0);
 
   delete from public.sessions
-  where type in ('cover', 'free')
+  where type in ('cover', 'covered', 'free')
     and (
       (expires_at is not null and expires_at <= now())
       or (
@@ -156,7 +156,7 @@ end;
 $$;
 
 revoke all on function public.cleanup_expired_temporary_sessions() from public;
-grant execute on function public.cleanup_expired_temporary_sessions() to anon, authenticated;
+grant execute on function public.cleanup_expired_temporary_sessions() to authenticated;
 
 alter table public.students enable row level security;
 alter table public.sessions enable row level security;
@@ -195,5 +195,7 @@ grant select, insert, update, delete on table public.students to authenticated;
 grant select, insert, update, delete on table public.sessions to authenticated;
 grant select, insert, update, delete on table public.feedback to authenticated;
 
-grant select on public.coordinator_schedule to anon, authenticated;
-grant select on public.coordinator_feedback to anon, authenticated;
+revoke all on table public.coordinator_schedule from anon;
+revoke all on table public.coordinator_feedback from anon;
+grant select on public.coordinator_schedule to authenticated;
+grant select on public.coordinator_feedback to authenticated;

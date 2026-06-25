@@ -18,72 +18,95 @@
         <p class="instructor">Instructor: <strong>Hossam Nabil Elsabbagh</strong></p>
       </div>
 
-      <div class="top-actions">
+      <div class="top-actions hidden" id="coordinatorActions">
         <button class="secondary-btn" id="refreshBtn">Refresh</button>
+        <button class="danger-outline-btn" id="coordinatorLogoutBtn">Logout</button>
         <span class="live-note">Auto-refresh every 10 seconds</span>
       </div>
     </section>
 
-    <section class="info-box">
-      <strong>Read-only page</strong>
-      <p>This page shows the schedule, feedback, and session status colors only. Prices and private payment details are hidden.</p>
+    <section class="login-panel" id="coordinatorLoginPanel">
+      <div>
+        <p class="company">Coordinator Login</p>
+        <h2>Login first to view the schedule</h2>
+        <p>This page is read-only. After login, the coordinator can view the schedule, available time in week, session colors, and feedback only.</p>
+      </div>
+
+      <form class="login-form" id="coordinatorLoginForm">
+        <input id="coordinatorEmail" type="email" placeholder="Coordinator email" required />
+        <input id="coordinatorPassword" type="password" placeholder="Password" required />
+        <button class="primary-btn" type="submit">Login</button>
+      </form>
     </section>
 
-    <section class="legend-panel">
-      <span><i class="available-dot"></i> Available</span>
-      <span><i class="paid-dot"></i> Paid</span>
-      <span><i class="cover-dot"></i> Cover</span>
-      <span><i class="free-dot"></i> Free</span>
-    </section>
+    <section id="coordinatorContent" class="hidden">
+      <section class="info-box">
+        <strong>Read-only page</strong>
+        <p>This page shows the schedule, feedback, and session status colors only. Prices and private payment details are hidden.</p>
+      </section>
 
-    <section class="panel">
-      <div class="section-heading">
-        <div>
-          <h2>Schedule</h2>
-          <p>Saturday to Friday, from 2 PM to 10 PM.</p>
+      <section class="legend-panel">
+        <span><i class="available-dot"></i> Available</span>
+        <span><i class="paid-dot"></i> Paid</span>
+        <span><i class="cover-dot"></i> Cover / Covered</span>
+        <span><i class="free-dot"></i> Free</span>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <h2>Schedule</h2>
+            <p>Saturday to Friday, from 2 PM to 10 PM.</p>
+          </div>
+          <input id="publicSearch" class="search-input" type="search" placeholder="Search student or course..." />
         </div>
-        <input id="publicSearch" class="search-input" type="search" placeholder="Search student or course..." />
-      </div>
 
-      <div class="schedule-wrapper">
-        <table class="schedule-table" id="publicScheduleTable"></table>
-      </div>
-    </section>
-
-    <section class="panel">
-      <div class="section-heading">
-        <div>
-          <h2>Feedback</h2>
-          <p>All saved student feedback rows.</p>
+        <div class="schedule-wrapper">
+          <table class="schedule-table" id="publicScheduleTable"></table>
         </div>
-      </div>
+      </section>
 
-      <div class="table-scroll feedback-table-wrap">
-        <table class="data-table feedback-table">
-          <thead>
-            <tr>
-              <th>Student Name</th>
-              <th>Date</th>
-              <th>Session Number</th>
-              <th>Course</th>
-              <th>Lesson Title</th>
-              <th>Attendance</th>
-              <th>Commitment</th>
-              <th>Understanding</th>
-              <th>Problem Solving</th>
-              <th>Practical</th>
-              <th>Exercises</th>
-              <th>Participation</th>
-              <th>Homework?</th>
-              <th>Previous Homework</th>
-              <th>What Was Explained</th>
-              <th>Strengths</th>
-              <th>Improvement Areas</th>
-            </tr>
-          </thead>
-          <tbody id="publicFeedbackBody"></tbody>
-        </table>
-      </div>
+      <section class="panel available-week-box">
+        <h2>Available time in week</h2>
+        <p>These are the empty slots that are still available in each day.</p>
+        <div class="available-week-list" id="availableWeekList"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <h2>Feedback</h2>
+            <p>All saved student feedback rows.</p>
+          </div>
+        </div>
+
+        <div class="table-scroll feedback-table-wrap">
+          <table class="data-table feedback-table">
+            <thead>
+              <tr>
+                <th>Student Name</th>
+                <th>Date</th>
+                <th>Session Number</th>
+                <th>Course</th>
+                <th>Lesson Title</th>
+                <th>Attendance</th>
+                <th>Commitment</th>
+                <th>Understanding</th>
+                <th>Problem Solving</th>
+                <th>Practical</th>
+                <th>Exercises</th>
+                <th>Participation</th>
+                <th>Homework?</th>
+                <th>Previous Homework</th>
+                <th>What Was Explained</th>
+                <th>Strengths</th>
+                <th>Improvement Areas</th>
+              </tr>
+            </thead>
+            <tbody id="publicFeedbackBody"></tbody>
+          </table>
+        </div>
+      </section>
     </section>
   </main>
 

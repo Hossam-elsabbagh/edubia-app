@@ -12,10 +12,12 @@ This version is made for real deployment with a live coordinator link.
   - Copy/Open coordinator link
 
 - Coordinator page: `coordinator.html`
-  - Read-only
+  - Opens with a coordinator login first
+  - Read-only after login
   - Shows schedule and feedback only
   - Does NOT show prices
   - Shows paid/free/cover status using colors
+  - Shows Available time in week under the schedule
   - Auto-refreshes every 10 seconds
 
 - Data is stored in Supabase, not in local browser storage.
@@ -31,7 +33,8 @@ This version is made for real deployment with a live coordinator link.
 - `app.js` — Admin logic
 - `coordinator.js` — Coordinator logic
 - `config.js` — Supabase project URL and anon key
-- `database.sql` — Database setup for Supabase
+- `database.sql` — Database setup for new Supabase projects
+- `database_update_existing_supabase.sql` — Patch for existing Supabase projects
 
 ---
 
@@ -118,6 +121,7 @@ Send only the coordinator link to coordinators.
 
 - A `Download` button was added beside each feedback student name in the coordinator feedback table.
 - A `Download` button was also added to each student row in the admin students table.
+- A `Delete` button was added to remove a student completely with all their sessions and feedback.
 - The PDF is generated in the browser from the saved student feedback and schedule data, using `report.js`, `html2canvas`, and `jsPDF`.
 - The downloaded file is automatically named with the student name, for example: `تقرير الطالب Ahmed — Edubia.pdf`.
 
@@ -156,3 +160,12 @@ If you already ran the old `database.sql`, open Supabase SQL Editor and run:
 ```
 
 After that, commit and redeploy the updated files to Vercel.
+
+
+## V3.2 Important Notes
+
+1. After uploading the files to GitHub, run `database_update_existing_supabase.sql` in Supabase SQL Editor.
+2. The coordinator page now requires login before showing the table. Use a Supabase Auth user email/password.
+3. If the Open Coordinator View button is blocked by the browser, the code falls back to opening the coordinator link in the current tab.
+4. Cover/Free sessions are temporary. They are removed automatically after their selected hour finishes. Paid sessions remain weekly.
+5. The admin Delete Student button deletes the student, sessions, and feedback rows.
