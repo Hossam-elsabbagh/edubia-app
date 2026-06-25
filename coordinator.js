@@ -17,6 +17,8 @@ let schedule = [];
 let feedback = [];
 let loadTimerId = null;
 let downloadTargetFeedbackId = null;
+let expandedFeedbackStudentKey = null;
+let selectedPublicFeedbackId = null;
 
 const scheduleTable = document.getElementById("publicScheduleTable");
 const feedbackBody = document.getElementById("publicFeedbackBody");
@@ -93,6 +95,113 @@ function getStudentSessionRows(sourceRow, range) {
     (item.student_id || item.student_name) === studentKey &&
     isInsideSessionRange(item.current_session, range)
   );
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function getStudentKey(row) {
+  return String(row.student_id || row.student_name || "unknown-student");
+}
+
+function getStudentNameFromRows(rows) {
+  const rowWithName = rows.find(row => row.student_name);
+  return rowWithName?.student_name || "Student";
+}
+
+function sortFeedbackRows(rows) {
+  return [...rows].sort((a, b) => {
+    const aSession = extractSessionNumber(a.session_number);
+    const bSession = extractSessionNumber(b.session_number);
+    if (aSession !== null && bSession !== null && aSession !== bSession) return aSession - bSession;
+    if (aSession !== null && bSession === null) return -1;
+    if (aSession === null && bSession !== null) return 1;
+    return String(a.date || a.created_at || "").localeCompare(String(b.date || b.created_at || ""));
+  });
+}
+
+function buildFeedbackGroups() {
+  const groups = new Map();
+
+  [...schedule, ...feedback].forEach(row => {
+    const key = getStudentKey(row);
+    if (!groups.has(key)) groups.set(key, { key, studentName: "Student", feedbackRows: [], sessionRows: [] });
+    const group = groups.get(key);
+    if (row.student_name && group.studentName === "Student") group.studentName = row.student_name;
+    if (row.lesson_title || row.explained || row.improvement_areas || row.strengths || row.session_number) {
+      group.feedbackRows.push(row);
+    } else {
+      group.sessionRows.push(row);
+    }
+  });
+
+  groups.forEach(group => {
+    const allRows = [...group.feedbackRows, ...group.sessionRows];
+    group.studentName = getStudentNameFromRows(allRows);
+    group.feedbackRows = sortFeedbackRows(group.feedbackRows);
+    group.sessionRows = [...group.sessionRows].sort((a, b) => Number(a.current_session || 0) - Number(b.current_session || 0));
+  });
+
+  return [...groups.values()].sort((a, b) => groupStudentName(a).localeCompare(groupStudentName(b)));
+}
+
+function groupStudentName(group) {
+  return group.studentName || "Student";
+}
+
+function selectedFeedbackDetailsHtml(item) {
+  if (!item) {
+    return `
+      <div class="feedback-detail-empty">
+        Choose one feedback item to show the full saved notes here.
+      </div>
+    `;
+  }
+
+  const scoreRows = [
+    ["Commitment", item.commitment_score],
+    ["Understanding", item.understanding_score],
+    ["Problem Solving", item.problem_solving_score],
+    ["Practical", item.practical_score],
+    ["Exercises", item.exercise_score],
+    ["Participation", item.participation_score],
+  ];
+
+  return `
+    <article class="public-feedback-detail-card">
+      <div class="public-feedback-detail-head">
+        <div>
+          <strong>${escapeHtml(item.student_name || "Student")}</strong>
+          <span>${escapeHtml(item.course || "Course")} · Session ${escapeHtml(item.session_number || "-")}</span>
+        </div>
+        <button class="download-report-btn" data-download-feedback-id="${escapeHtml(item.id)}">Download</button>
+      </div>
+
+      <div class="public-feedback-meta-grid">
+        <span><b>Date</b>${escapeHtml(item.date || "-")}</span>
+        <span><b>Lesson</b>${escapeHtml(item.lesson_title || "-")}</span>
+        <span><b>Attendance</b>${escapeHtml(item.attendance || "-")}</span>
+        <span><b>Homework?</b>${escapeHtml(item.has_homework || "-")}</span>
+      </div>
+
+      <div class="public-feedback-score-grid">
+        ${scoreRows.map(([label, value]) => `<span><b>${label}</b>${escapeHtml(value ?? "-")}</span>`).join("")}
+      </div>
+
+      <div class="public-feedback-text-grid">
+        <section><b>Previous Homework</b><p>${escapeHtml(item.previous_homework || "-")}</p></section>
+        <section><b>What Was Explained</b><p>${escapeHtml(item.explained || "-")}</p></section>
+        <section><b>Strengths</b><p>${escapeHtml(item.strengths || "-")}</p></section>
+        <section><b>Improvement Areas</b><p>${escapeHtml(item.improvement_areas || "-")}</p></section>
+      </div>
+    </article>
+  `;
 }
 
 function closeCoordinatorDownloadModal() {
@@ -291,39 +400,77 @@ function renderAvailableWeek() {
 }
 
 function renderFeedback() {
-  if (feedback.length === 0) {
-    feedbackBody.innerHTML = `<tr><td colspan="17">No feedback saved yet.</td></tr>`;
+  const groups = buildFeedbackGroups();
+
+  if (groups.length === 0) {
+    feedbackBody.innerHTML = `<div class="empty-feedback-state">No students or feedback saved yet.</div>`;
     return;
   }
 
-  feedbackBody.innerHTML = feedback.map(item => `
-    <tr>
-      <td>
-        <div class="feedback-name-cell">
-          <strong>${item.student_name}</strong>
-          <button class="download-report-btn" data-download-feedback-id="${item.id}">Download</button>
-        </div>
-      </td>
-      <td>${item.date || "-"}</td>
-      <td>${item.session_number || "-"}</td>
-      <td>${item.course || "-"}</td>
-      <td>${item.lesson_title || "-"}</td>
-      <td>${item.attendance || "-"}</td>
-      <td>${item.commitment_score ?? "-"}</td>
-      <td>${item.understanding_score ?? "-"}</td>
-      <td>${item.problem_solving_score ?? "-"}</td>
-      <td>${item.practical_score ?? "-"}</td>
-      <td>${item.exercise_score ?? "-"}</td>
-      <td>${item.participation_score ?? "-"}</td>
-      <td>${item.has_homework || "-"}</td>
-      <td>${item.previous_homework || "-"}</td>
-      <td>${item.explained || "-"}</td>
-      <td>${item.strengths || "-"}</td>
-      <td>${item.improvement_areas || "-"}</td>
-    </tr>
-  `).join("");
+  if (!expandedFeedbackStudentKey || !groups.some(group => group.key === expandedFeedbackStudentKey)) {
+    expandedFeedbackStudentKey = groups[0].key;
+  }
 
-  document.querySelectorAll("[data-download-feedback-id]").forEach(btn => {
+  const expandedGroup = groups.find(group => group.key === expandedFeedbackStudentKey);
+  const expandedFeedbackIds = new Set(expandedGroup.feedbackRows.map(item => String(item.id)));
+  if (!selectedPublicFeedbackId || !expandedFeedbackIds.has(String(selectedPublicFeedbackId))) {
+    selectedPublicFeedbackId = expandedGroup.feedbackRows[0]?.id || null;
+  }
+
+  feedbackBody.innerHTML = `
+    <div class="public-feedback-student-list">
+      ${groups.map(group => {
+        const isOpen = group.key === expandedFeedbackStudentKey;
+        const feedbackCount = group.feedbackRows.length;
+        const sessionCount = new Set([
+          ...group.feedbackRows.map(item => item.session_number).filter(Boolean),
+          ...group.sessionRows.map(item => item.current_session).filter(Boolean),
+        ]).size;
+
+        return `
+          <article class="public-feedback-student-card ${isOpen ? "is-open" : ""}">
+            <button type="button" class="public-feedback-student-btn" data-feedback-student-key="${escapeHtml(group.key)}">
+              <span>${escapeHtml(groupStudentName(group))}</span>
+              <small>${feedbackCount} feedback · ${sessionCount} sessions</small>
+            </button>
+
+            ${isOpen ? `
+              <div class="public-feedback-options">
+                ${feedbackCount ? group.feedbackRows.map((item, index) => `
+                  <button type="button" class="public-feedback-option ${String(item.id) === String(selectedPublicFeedbackId) ? "active" : ""}" data-select-feedback-id="${escapeHtml(item.id)}">
+                    <strong>Feedback ${index + 1}</strong>
+                    <span>Session ${escapeHtml(item.session_number || "-")} · ${escapeHtml(item.date || "No date")}</span>
+                  </button>
+                `).join("") : `<div class="feedback-detail-empty small">No feedback saved for this student yet.</div>`}
+              </div>
+            ` : ""}
+          </article>
+        `;
+      }).join("")}
+    </div>
+
+    <div class="public-feedback-detail-panel">
+      ${selectedFeedbackDetailsHtml(feedback.find(item => String(item.id) === String(selectedPublicFeedbackId)))}
+    </div>
+  `;
+
+  feedbackBody.querySelectorAll("[data-feedback-student-key]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      expandedFeedbackStudentKey = btn.dataset.feedbackStudentKey;
+      const group = groups.find(item => item.key === expandedFeedbackStudentKey);
+      selectedPublicFeedbackId = group?.feedbackRows[0]?.id || null;
+      renderFeedback();
+    });
+  });
+
+  feedbackBody.querySelectorAll("[data-select-feedback-id]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      selectedPublicFeedbackId = btn.dataset.selectFeedbackId;
+      renderFeedback();
+    });
+  });
+
+  feedbackBody.querySelectorAll("[data-download-feedback-id]").forEach(btn => {
     btn.addEventListener("click", () => openCoordinatorDownloadModal(btn.dataset.downloadFeedbackId));
   });
 }

@@ -1017,3 +1017,228 @@ h3 {
     flex-direction: column;
   }
 }
+
+/* V8: public coordinator feedback grouped by student */
+.public-feedback-layout {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.public-feedback-student-list {
+  display: grid;
+  gap: 12px;
+}
+
+.public-feedback-student-card {
+  border: 1px solid #dbe4f0;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(15, 35, 70, 0.05);
+}
+
+.public-feedback-student-card.is-open {
+  border-color: #fdba74;
+  box-shadow: 0 10px 24px rgba(249, 115, 22, 0.10);
+}
+
+.public-feedback-student-btn {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  text-align: left;
+  color: #08265a;
+}
+
+.public-feedback-student-btn span {
+  font-weight: 900;
+  font-size: 17px;
+}
+
+.public-feedback-student-btn small {
+  color: #64748b;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.public-feedback-student-card.is-open .public-feedback-student-btn {
+  background: linear-gradient(135deg, #fff7ed, #ffffff);
+}
+
+.public-feedback-options {
+  display: grid;
+  gap: 8px;
+  padding: 0 12px 14px;
+}
+
+.public-feedback-option {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #ffffff;
+  color: #1f2937;
+  cursor: pointer;
+  text-align: left;
+  transition: 0.15s ease;
+}
+
+.public-feedback-option:hover {
+  border-color: #bfdbfe;
+  transform: translateY(-1px);
+}
+
+.public-feedback-option strong,
+.public-feedback-option span {
+  display: block;
+}
+
+.public-feedback-option strong {
+  color: #08265a;
+  margin-bottom: 3px;
+}
+
+.public-feedback-option span {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.public-feedback-option.active {
+  border-color: #ff8a1f;
+  background: linear-gradient(135deg, #ff9f26, #ff7f0f);
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(255, 127, 15, 0.20);
+}
+
+.public-feedback-option.active strong,
+.public-feedback-option.active span {
+  color: #ffffff;
+}
+
+.public-feedback-detail-panel {
+  min-width: 0;
+  position: sticky;
+  top: 16px;
+}
+
+.public-feedback-detail-card {
+  border: 1px solid #dbe4f0;
+  border-radius: 18px;
+  padding: 16px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 35, 70, 0.06);
+}
+
+.public-feedback-detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.public-feedback-detail-head strong {
+  display: block;
+  color: #08265a;
+  font-size: 22px;
+}
+
+.public-feedback-detail-head span {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-weight: 800;
+}
+
+.public-feedback-meta-grid,
+.public-feedback-score-grid,
+.public-feedback-text-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.public-feedback-meta-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.public-feedback-score-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.public-feedback-text-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.public-feedback-meta-grid span,
+.public-feedback-score-grid span,
+.public-feedback-text-grid section {
+  border: 1px solid #e7edf5;
+  border-radius: 12px;
+  padding: 10px;
+  background: #f8fafc;
+  min-width: 0;
+}
+
+.public-feedback-meta-grid b,
+.public-feedback-score-grid b,
+.public-feedback-text-grid b {
+  display: block;
+  color: #08265a;
+  margin-bottom: 6px;
+}
+
+.public-feedback-text-grid p {
+  color: #526174;
+  line-height: 1.7;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.feedback-detail-empty {
+  border: 1px dashed #cbd5e1;
+  border-radius: 14px;
+  padding: 18px;
+  text-align: center;
+  color: #64748b;
+  background: #f8fafc;
+  font-weight: 800;
+}
+
+.feedback-detail-empty.small {
+  padding: 12px;
+  font-size: 13px;
+}
+
+@media (max-width: 1000px) {
+  .public-feedback-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .public-feedback-detail-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 700px) {
+  .public-feedback-student-btn,
+  .public-feedback-detail-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .public-feedback-meta-grid,
+  .public-feedback-score-grid,
+  .public-feedback-text-grid {
+    grid-template-columns: 1fr;
+  }
+}
