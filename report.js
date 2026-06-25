@@ -2,6 +2,7 @@
   const INSTRUCTOR_AR = "م. حسام نبيل";
   const DEFAULT_LEVEL = "المستوى الأول";
   const DEFAULT_DURATION = "60 دقيقة";
+  const EDUBIA_LOGO_DATA_URL = "data:image/png;base64,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";
 
   const REPORT_CSS = `
     .edubia-report-root,
@@ -11,10 +12,11 @@
 
     .edubia-report-root {
       position: fixed;
-      left: -99999px;
+      left: 0;
       top: 0;
       width: 794px;
-      z-index: -1;
+      z-index: -9999;
+      pointer-events: none;
       font-family: "Cairo", "Tahoma", Arial, sans-serif;
       color: #09224a;
       direction: rtl;
@@ -840,6 +842,19 @@
     downloadBlob(fileName, "application/json;charset=utf-8", JSON.stringify(data, null, 2));
   }
 
+  async function waitForReportAssets(root) {
+    const images = [...root.querySelectorAll("img")];
+    await Promise.all(images.map(img => {
+      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+      return new Promise(resolve => {
+        img.onload = resolve;
+        img.onerror = resolve;
+      });
+    }));
+    if (document.fonts?.ready) await document.fonts.ready;
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  }
+
   async function downloadStudentReport(payload) {
     if (!window.html2canvas || !window.jspdf?.jsPDF) {
       alert("PDF libraries are still loading. Please wait a few seconds and try again.");
@@ -855,8 +870,7 @@
     document.body.appendChild(root);
 
     try {
-      if (document.fonts?.ready) await document.fonts.ready;
-      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      await waitForReportAssets(root);
 
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF("p", "pt", "a4");
@@ -885,6 +899,9 @@
 
       const fileName = safeFileName(`تقرير الطالب ${metrics.studentName} — Edubia.pdf`);
       pdf.save(fileName);
+    } catch (error) {
+      console.error("Edubia PDF download failed:", error);
+      alert(`PDF download failed: ${error?.message || error}. Please try again or download JSON for now.`);
     } finally {
       root.remove();
     }
