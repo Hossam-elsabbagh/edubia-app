@@ -169,3 +169,19 @@ After that, commit and redeploy the updated files to Vercel.
 3. If the Open Coordinator View button is blocked by the browser, the code falls back to opening the coordinator link in the current tab.
 4. Cover/Free sessions are temporary. They are removed automatically after their selected hour finishes. Paid sessions remain weekly.
 5. The admin Delete Student button deletes the student, sessions, and feedback rows.
+
+## V3.3 Feedback Download + Coordinator Cards
+
+- The **Available time in week** section is now shown as clean day cards with time chips, slot count, and a Today badge.
+- The **Download Feedback** flow now opens a small popup before downloading.
+- The popup lets you choose:
+  - From Session
+  - To Session
+  - Download PDF
+  - Download JSON
+- Leaving the range empty downloads all saved feedback for that student.
+- Example: From `1` to `8` downloads only feedback rows for sessions 1 through 8.
+- PDF reports still use the Edubia Arabic branded layout in `report.js`.
+- JSON downloads contain the selected range, student summary, sessions, and feedback rows.
+
+Upload these files to GitHub and keep your existing `config.js` unchanged.

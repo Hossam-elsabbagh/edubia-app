@@ -18,6 +18,7 @@ let schedule = [];
 let feedback = [];
 let loadTimerId = null;
 let authRenderPromise = null;
+let downloadTargetFeedbackId = null;
 
 const loginPanel = document.getElementById("coordinatorLoginPanel");
 const contentPanel = document.getElementById("coordinatorContent");
@@ -27,6 +28,8 @@ const scheduleTable = document.getElementById("publicScheduleTable");
 const feedbackBody = document.getElementById("publicFeedbackBody");
 const publicSearch = document.getElementById("publicSearch");
 const availableWeekList = document.getElementById("availableWeekList");
+const coordinatorDownloadModal = document.getElementById("coordinatorDownloadModal");
+const coordinatorDownloadForm = document.getElementById("coordinatorDownloadForm");
 
 function checkConfig() {
   if (SUPABASE_URL.includes("PASTE_") || SUPABASE_URL.includes("YOUR_") || SUPABASE_ANON_KEY.includes("PASTE_") || SUPABASE_ANON_KEY.includes("YOUR_")) {
@@ -49,6 +52,99 @@ function getScheduleDayIndex(date = new Date()) {
 function normalizeType(type) {
   if (type === "covered") return "cover";
   return type || "paid";
+}
+
+function extractSessionNumber(value) {
+  const match = String(value ?? "").match(/\d+(?:\.\d+)?/);
+  return match ? Number(match[0]) : null;
+}
+
+function normalizeSessionRange(fromValue, toValue) {
+  const from = fromValue === "" || fromValue == null ? null : Number(fromValue);
+  const to = toValue === "" || toValue == null ? null : Number(toValue);
+
+  if ((from !== null && (!Number.isFinite(from) || from < 1)) || (to !== null && (!Number.isFinite(to) || to < 1))) {
+    alert("Please enter a valid session range, for example from 1 to 8.");
+    return null;
+  }
+
+  if (from !== null && to !== null && from > to) {
+    alert("The From Session value must be smaller than or equal to the To Session value.");
+    return null;
+  }
+
+  return { from, to };
+}
+
+function isInsideSessionRange(value, range) {
+  if (!range || (range.from === null && range.to === null)) return true;
+  const sessionNumber = extractSessionNumber(value);
+  if (sessionNumber === null) return false;
+  if (range.from !== null && sessionNumber < range.from) return false;
+  if (range.to !== null && sessionNumber > range.to) return false;
+  return true;
+}
+
+function getStudentFeedbackRows(sourceRow, range) {
+  const studentKey = sourceRow.student_id || sourceRow.student_name;
+  return feedback.filter(item =>
+    (item.student_id || item.student_name) === studentKey &&
+    isInsideSessionRange(item.session_number, range)
+  );
+}
+
+function getStudentSessionRows(sourceRow, range) {
+  const studentKey = sourceRow.student_id || sourceRow.student_name;
+  return schedule.filter(item =>
+    (item.student_id || item.student_name) === studentKey &&
+    isInsideSessionRange(item.current_session, range)
+  );
+}
+
+function closeCoordinatorDownloadModal() {
+  downloadTargetFeedbackId = null;
+  coordinatorDownloadModal?.close();
+}
+
+function openCoordinatorDownloadModal(feedbackId) {
+  const sourceRow = feedback.find(item => String(item.id) === String(feedbackId));
+  if (!sourceRow || !coordinatorDownloadModal) return;
+
+  downloadTargetFeedbackId = feedbackId;
+  document.getElementById("coordinatorDownloadStudentName").textContent = `${sourceRow.student_name || "Student"} Feedback`;
+  coordinatorDownloadForm.reset();
+  coordinatorDownloadModal.showModal();
+}
+
+async function downloadReportFromFeedbackWithFormat(feedbackId, format, range) {
+  const sourceRow = feedback.find(item => String(item.id) === String(feedbackId));
+  if (!sourceRow) return;
+
+  const allFeedback = getStudentFeedbackRows(sourceRow, { from: null, to: null });
+  const allSessions = getStudentSessionRows(sourceRow, { from: null, to: null });
+  const studentFeedback = getStudentFeedbackRows(sourceRow, range);
+  const studentSessions = getStudentSessionRows(sourceRow, range);
+  const hasRange = Boolean(range?.from !== null || range?.to !== null);
+
+  if (studentFeedback.length === 0) {
+    const rangeText = range?.from || range?.to ? ` in sessions ${range.from ?? "start"} to ${range.to ?? "end"}` : "";
+    const ok = confirm(`No feedback rows found${rangeText}. Download using schedule data only?`);
+    if (!ok) return;
+  }
+
+  const payload = {
+    studentName: sourceRow.student_name,
+    course: sourceRow.course || studentSessions[0]?.course || allSessions[0]?.course || allFeedback[0]?.course || "General",
+    sessions: hasRange ? studentSessions : allSessions,
+    feedbackItems: studentFeedback,
+    selectedRange: range,
+  };
+
+  if (format === "json") {
+    window.EdubiaReport.downloadStudentReportJson(payload);
+  } else {
+    await window.EdubiaReport.downloadStudentReport(payload);
+  }
 }
 
 function isTemporarySessionExpired(session) {
@@ -203,17 +299,24 @@ function renderSchedule() {
 }
 
 function renderAvailableWeek() {
-  availableWeekList.innerHTML = DAYS.map(day => {
+  const todayIndex = getScheduleDayIndex();
+
+  availableWeekList.innerHTML = DAYS.map((day, index) => {
     const available = getAvailableHours(day);
-    const availableText = available.length
-      ? available.map(hour => formatHour(hour)).join(", ")
-      : "No available time";
+    const isToday = index === todayIndex;
+    const chips = available.length
+      ? available.map(hour => `<span class="available-time-chip">${formatHour(hour)}</span>`).join("")
+      : `<span class="no-available-chip">No available slots</span>`;
 
     return `
-      <div class="available-day-row">
-        <strong>${day}</strong>
-        <span>${availableText}</span>
-      </div>
+      <article class="available-day-card ${isToday ? "is-today" : ""}">
+        <div class="available-day-head">
+          <strong>${day}</strong>
+          <span>${available.length} slots</span>
+          ${isToday ? `<em>Today</em>` : ""}
+        </div>
+        <div class="available-time-chips">${chips}</div>
+      </article>
     `;
   }).join("");
 }
@@ -252,25 +355,12 @@ function renderFeedback() {
   `).join("");
 
   document.querySelectorAll("[data-download-feedback-id]").forEach(btn => {
-    btn.addEventListener("click", () => downloadReportFromFeedback(btn.dataset.downloadFeedbackId));
+    btn.addEventListener("click", () => openCoordinatorDownloadModal(btn.dataset.downloadFeedbackId));
   });
 }
 
 async function downloadReportFromFeedback(feedbackId) {
-  const sourceRow = feedback.find(item => String(item.id) === String(feedbackId));
-  if (!sourceRow) return;
-
-  const studentName = sourceRow.student_name;
-  const studentKey = sourceRow.student_id || sourceRow.student_name;
-  const studentFeedback = feedback.filter(item => (item.student_id || item.student_name) === studentKey);
-  const studentSessions = schedule.filter(item => (item.student_id || item.student_name) === studentKey);
-
-  await window.EdubiaReport.downloadStudentReport({
-    studentName,
-    course: sourceRow.course || studentSessions[0]?.course || "General",
-    sessions: studentSessions,
-    feedbackItems: studentFeedback,
-  });
+  await downloadReportFromFeedbackWithFormat(feedbackId, "pdf", { from: null, to: null });
 }
 
 async function loginCoordinator(email, password) {
@@ -291,6 +381,24 @@ async function loginCoordinator(email, password) {
   sessionStorage.setItem(SESSION_UNLOCK_KEY, "true");
   await renderAuth();
 }
+
+coordinatorDownloadForm?.addEventListener("submit", async event => {
+  event.preventDefault();
+  if (!downloadTargetFeedbackId) return;
+
+  const submitter = event.submitter;
+  const format = submitter?.dataset?.format || "pdf";
+  const range = normalizeSessionRange(
+    document.getElementById("coordinatorDownloadFromSession").value.trim(),
+    document.getElementById("coordinatorDownloadToSession").value.trim()
+  );
+  if (!range) return;
+
+  await downloadReportFromFeedbackWithFormat(downloadTargetFeedbackId, format, range);
+  closeCoordinatorDownloadModal();
+});
+
+document.getElementById("closeCoordinatorDownloadModal")?.addEventListener("click", closeCoordinatorDownloadModal);
 
 loginForm.addEventListener("submit", async event => {
   event.preventDefault();

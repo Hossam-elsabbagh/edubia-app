@@ -110,6 +110,40 @@
     </section>
   </main>
 
+
+
+  <dialog class="modal" id="coordinatorDownloadModal">
+    <form method="dialog" class="modal-card download-card" id="coordinatorDownloadForm">
+      <div class="modal-header">
+        <div>
+          <p class="company small">Download Feedback</p>
+          <h3 id="coordinatorDownloadStudentName">Download Report</h3>
+        </div>
+        <button type="button" class="icon-btn" id="closeCoordinatorDownloadModal">×</button>
+      </div>
+
+      <p class="download-help">Choose a session range, then download the same feedback either as a polished PDF report or as a JSON data file.</p>
+
+      <div class="form-grid download-range-grid">
+        <label>
+          From Session
+          <input id="coordinatorDownloadFromSession" type="number" min="1" placeholder="Example: 1" />
+        </label>
+        <label>
+          To Session
+          <input id="coordinatorDownloadToSession" type="number" min="1" placeholder="Example: 8" />
+        </label>
+      </div>
+
+      <small class="hint">Leave both fields empty to download all saved feedback for this student.</small>
+
+      <div class="download-format-grid">
+        <button type="submit" class="primary-btn" data-format="pdf">Download PDF</button>
+        <button type="submit" class="secondary-btn" data-format="json">Download JSON</button>
+      </div>
+    </form>
+  </dialog>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>

@@ -259,10 +259,10 @@ h3 {
   vertical-align: middle;
 }
 
-.available-dot { background: #22c55e; }
-.paid-dot { background: #3b82f6; }
-.cover-dot { background: #8b5cf6; }
-.free-dot { background: #f97316; }
+.available-dot { background: #16a34a; }
+.paid-dot { background: #075985; }
+.cover-dot { background: #ea580c; }
+.free-dot { background: #dc2626; }
 .public-session-dot { background: #8b5cf6; }
 
 .panel {
@@ -386,22 +386,25 @@ h3 {
 }
 
 .type-paid {
-  background: #dbeafe;
-  color: #1e3a8a;
-  border-color: #60a5fa;
+  background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+  color: #075985;
+  border-color: #0284c7;
+  box-shadow: 0 9px 20px rgba(2, 132, 199, 0.18);
 }
 
 .type-cover,
 .type-covered {
-  background: #ede9fe;
-  color: #4c1d95;
-  border-color: #a78bfa;
+  background: linear-gradient(135deg, #fff7ed, #fed7aa);
+  color: #9a3412;
+  border-color: #f97316;
+  box-shadow: 0 9px 20px rgba(249, 115, 22, 0.18);
 }
 
 .type-free {
-  background: #ffedd5;
-  color: #9a3412;
-  border-color: #fdba74;
+  background: linear-gradient(135deg, #fef2f2, #fecaca);
+  color: #991b1b;
+  border-color: #ef4444;
+  box-shadow: 0 9px 20px rgba(239, 68, 68, 0.18);
 }
 
 .type-public {
@@ -412,46 +415,105 @@ h3 {
 
 .available-week-box {
   margin-top: 18px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: #f8fafc;
+  padding: 20px;
+  border: 1px solid #cdebd8;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff, #f7fffb);
 }
 
+.available-week-box h2,
 .available-week-box h3 {
   margin-bottom: 4px;
-  font-size: 20px;
+  font-size: 24px;
+  color: #08265a;
 }
 
 .available-week-box p {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   color: var(--muted);
 }
 
 .available-week-list {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.available-day-card {
+  padding: 16px;
+  border: 1px solid #d8eadf;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 35, 70, 0.05);
+}
+
+.available-day-card.is-today {
+  border-color: #f28a14;
+  box-shadow: 0 12px 28px rgba(242, 138, 20, 0.16);
+  background: linear-gradient(180deg, #fffaf3, #ffffff);
+}
+
+.available-day-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.available-day-head strong {
+  color: #08265a;
+  font-size: 17px;
+}
+
+.available-day-head span {
+  margin-left: auto;
+  color: #16a34a;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.available-day-head em {
+  color: #ffffff;
+  background: linear-gradient(135deg, #ff9f26, #ff7f0f);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.available-time-chips {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
-.available-day-row {
-  display: grid;
-  grid-template-columns: 150px 1fr;
-  gap: 12px;
-  align-items: start;
-  padding: 10px 12px;
-  border: 1px solid #dcfce7;
-  border-radius: 10px;
-  background: #ffffff;
+.available-time-chip,
+.no-available-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 13px;
 }
 
-.available-day-row strong {
-  color: var(--text);
+.available-time-chip {
+  color: #065f46;
+  background: linear-gradient(180deg, #ecfdf5, #d1fae5);
+  border: 1px solid #86efac;
 }
 
-.available-day-row span {
-  color: var(--green-text);
-  font-weight: 700;
-  line-height: 1.5;
+.no-available-chip {
+  color: #991b1b;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
 }
 
 .data-table {
@@ -660,6 +722,28 @@ h3 {
   transform: translateY(-1px);
 }
 
+
+.download-card {
+  max-width: 620px;
+}
+
+.download-help {
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.download-range-grid {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.download-format-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 18px;
+}
+
 .feedback-name-cell {
   display: flex;
   align-items: center;
@@ -697,4 +781,15 @@ h3 {
 
 .actions-cell .danger-btn {
   margin-top: 6px;
+}
+
+@media (max-width: 900px) {
+  .available-week-list {
+    grid-template-columns: 1fr;
+  }
+
+  .download-range-grid,
+  .download-format-grid {
+    grid-template-columns: 1fr;
+  }
 }

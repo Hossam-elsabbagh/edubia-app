@@ -21,6 +21,7 @@ let feedbackStudentId = null;
 let prefillStudentId = null;
 let authRenderPromise = null;
 let cleanupIntervalId = null;
+let downloadTargetStudentId = null;
 
 const scheduleTable = document.getElementById("scheduleTable");
 const studentsTableBody = document.getElementById("studentsTableBody");
@@ -29,6 +30,8 @@ const detailsModal = document.getElementById("detailsModal");
 const feedbackModal = document.getElementById("feedbackModal");
 const studentForm = document.getElementById("studentForm");
 const feedbackForm = document.getElementById("feedbackForm");
+const downloadModal = document.getElementById("downloadModal");
+const downloadForm = document.getElementById("downloadForm");
 const sessionDay = document.getElementById("sessionDay");
 const sessionHour = document.getElementById("sessionHour");
 const studentCourse = document.getElementById("studentCourse");
@@ -162,6 +165,92 @@ function getSessionsForStudent(studentId) {
 
 function getFeedbackForStudent(studentId) {
   return state.feedback.filter(item => item.student_id === studentId);
+}
+
+function extractSessionNumber(value) {
+  const match = String(value ?? "").match(/\d+(?:\.\d+)?/);
+  return match ? Number(match[0]) : null;
+}
+
+function normalizeSessionRange(fromValue, toValue) {
+  const from = fromValue === "" || fromValue == null ? null : Number(fromValue);
+  const to = toValue === "" || toValue == null ? null : Number(toValue);
+
+  if ((from !== null && (!Number.isFinite(from) || from < 1)) || (to !== null && (!Number.isFinite(to) || to < 1))) {
+    alert("Please enter a valid session range, for example from 1 to 8.");
+    return null;
+  }
+
+  if (from !== null && to !== null && from > to) {
+    alert("The From Session value must be smaller than or equal to the To Session value.");
+    return null;
+  }
+
+  return { from, to };
+}
+
+function isInsideSessionRange(value, range) {
+  if (!range || (range.from === null && range.to === null)) return true;
+  const sessionNumber = extractSessionNumber(value);
+  if (sessionNumber === null) return false;
+  if (range.from !== null && sessionNumber < range.from) return false;
+  if (range.to !== null && sessionNumber > range.to) return false;
+  return true;
+}
+
+function filterFeedbackBySessionRange(items, range) {
+  return items.filter(item => isInsideSessionRange(item.session_number, range));
+}
+
+function filterSessionsBySessionRange(items, range) {
+  return items.filter(item => isInsideSessionRange(item.current_session, range));
+}
+
+function closeDownloadModal() {
+  downloadTargetStudentId = null;
+  downloadModal?.close();
+}
+
+function openDownloadModal(studentId) {
+  const student = getStudent(studentId);
+  if (!student || !downloadModal) return;
+
+  downloadTargetStudentId = studentId;
+  document.getElementById("downloadStudentName").textContent = `${student.name} Feedback`;
+  downloadForm.reset();
+  downloadModal.showModal();
+}
+
+async function downloadStudentReportByFormat(studentId, format, range) {
+  const student = getStudent(studentId);
+  if (!student) return;
+
+  const allSessions = getSessionsForStudent(studentId);
+  const allFeedback = getFeedbackForStudent(studentId);
+  const sessions = filterSessionsBySessionRange(allSessions, range);
+  const feedbackItems = filterFeedbackBySessionRange(allFeedback, range);
+  const hasRange = Boolean(range?.from !== null || range?.to !== null);
+
+  if (feedbackItems.length === 0) {
+    const rangeText = range?.from || range?.to ? ` in sessions ${range.from ?? "start"} to ${range.to ?? "end"}` : "";
+    const ok = confirm(`No feedback rows found${rangeText}. Download using schedule data only?`);
+    if (!ok) return;
+  }
+
+  const payload = {
+    studentName: student.name,
+    student,
+    course: sessions[0]?.course || feedbackItems[0]?.course || allSessions[0]?.course || allFeedback[0]?.course || "General",
+    sessions: hasRange ? sessions : allSessions,
+    feedbackItems,
+    selectedRange: range,
+  };
+
+  if (format === "json") {
+    window.EdubiaReport.downloadStudentReportJson(payload);
+  } else {
+    await window.EdubiaReport.downloadStudentReport(payload);
+  }
 }
 
 function sessionPrice(session) {
@@ -379,7 +468,7 @@ function renderStudents() {
         <td class="actions-cell">
           <button class="small-btn" data-view-student="${student.id}">View</button>
           <button class="feedback-btn" data-feedback-student="${student.id}">Feedback</button>
-          <button class="download-report-btn" data-download-student="${student.id}">Download</button>
+          <button class="download-report-btn" data-download-student="${student.id}">Download Feedback</button>
           <button class="danger-btn" data-delete-student="${student.id}">Delete</button>
         </td>
       </tr>
@@ -395,7 +484,7 @@ function renderStudents() {
   });
 
   document.querySelectorAll("[data-download-student]").forEach(btn => {
-    btn.addEventListener("click", () => downloadStudentReportById(btn.dataset.downloadStudent));
+    btn.addEventListener("click", () => openDownloadModal(btn.dataset.downloadStudent));
   });
 
   document.querySelectorAll("[data-delete-student]").forEach(btn => {
@@ -733,23 +822,7 @@ function closeFeedback() {
 }
 
 async function downloadStudentReportById(studentId) {
-  const student = getStudent(studentId);
-  if (!student) return;
-
-  const sessions = getSessionsForStudent(studentId);
-  const feedbackItems = getFeedbackForStudent(studentId);
-
-  if (feedbackItems.length === 0) {
-    const ok = confirm("No feedback rows are saved for this student yet. Download a report using schedule data only?");
-    if (!ok) return;
-  }
-
-  await window.EdubiaReport.downloadStudentReport({
-    studentName: student.name,
-    course: sessions[0]?.course || feedbackItems[0]?.course || "General",
-    sessions,
-    feedbackItems,
-  });
+  await downloadStudentReportByFormat(studentId, "pdf", { from: null, to: null });
 }
 
 async function login(email, password) {
@@ -848,6 +921,24 @@ sessionDay.addEventListener("change", () => updateAvailableTimeOptions());
 studentSearch.addEventListener("input", renderSchedule);
 studentForm.addEventListener("submit", handleStudentFormSubmit);
 feedbackForm.addEventListener("submit", handleFeedbackSubmit);
+
+downloadForm?.addEventListener("submit", async event => {
+  event.preventDefault();
+  if (!downloadTargetStudentId) return;
+
+  const submitter = event.submitter;
+  const format = submitter?.dataset?.format || "pdf";
+  const range = normalizeSessionRange(
+    document.getElementById("downloadFromSession").value.trim(),
+    document.getElementById("downloadToSession").value.trim()
+  );
+  if (!range) return;
+
+  await downloadStudentReportByFormat(downloadTargetStudentId, format, range);
+  closeDownloadModal();
+});
+
+document.getElementById("closeDownloadModal")?.addEventListener("click", closeDownloadModal);
 
 client.auth.onAuthStateChange(() => {
   // Supabase can hang if async Supabase calls run directly inside this callback.

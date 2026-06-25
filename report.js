@@ -4,6 +4,11 @@
   const DEFAULT_DURATION = "60 دقيقة";
 
   const REPORT_CSS = `
+    .edubia-report-root,
+    .edubia-report-root * {
+      box-sizing: border-box;
+    }
+
     .edubia-report-root {
       position: fixed;
       left: -99999px;
@@ -29,8 +34,8 @@
       content: "";
       position: absolute;
       inset: 18px 20px 18px 20px;
-      border-left: 2px solid #f28a14;
-      border-right: 2px solid #f28a14;
+      border-left: 2px solid #fb8500;
+      border-right: 2px solid #fb8500;
       pointer-events: none;
     }
 
@@ -70,9 +75,9 @@
       padding: 34px 42px 28px;
       color: #fff;
       background:
-        linear-gradient(135deg, rgba(0, 31, 75, 0.98), rgba(21, 63, 130, 0.98)),
+        linear-gradient(135deg, rgba(3, 28, 68, 1), rgba(7, 46, 107, 1)),
         radial-gradient(circle at 30% 70%, rgba(255, 255, 255, .16), transparent 33%);
-      border-bottom: 4px solid #f28a14;
+      border-bottom: 4px solid #fb8500;
       border-top-left-radius: 8px;
       border-top-right-radius: 8px;
       position: relative;
@@ -112,7 +117,8 @@
 
     .edubia-logo-row { display: flex; align-items: center; gap: 14px; direction: ltr; }
     .edubia-logo-text { color: white; font-family: "Inter", "Cairo", sans-serif; font-size: 30px; font-weight: 800; letter-spacing: -0.03em; }
-    .edubia-logo-mark { width: 58px; height: 58px; border-radius: 16px; background: white; display: grid; place-items: center; font-size: 34px; color: #fb8500; }
+    .edubia-logo-mark { width: 58px; height: 58px; border-radius: 16px; background: white; display: grid; place-items: center; box-shadow: 0 10px 22px rgba(0,0,0,.12); }
+    .edubia-owl-svg { width: 42px; height: 42px; display: block; }
 
     .edubia-student-title {
       margin-top: 60px;
@@ -194,14 +200,14 @@
     .edubia-overall-card { text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 338px; }
     .edubia-donut {
       width: 162px; height: 162px; border-radius: 50%;
-      background: conic-gradient(#f2840e var(--angle), #fee8c8 var(--angle));
+      background: conic-gradient(#fb8500 var(--angle), #fee8c8 var(--angle));
       display: grid; place-items: center; margin: 6px auto 22px; position: relative;
     }
     .edubia-donut::before { content: ""; position: absolute; inset: 18px; border-radius: 50%; background: #fff9ef; box-shadow: inset 0 0 20px rgba(255, 164, 49, .22); }
     .edubia-donut-inner { position: relative; z-index: 1; text-align: center; direction: rtl; }
-    .edubia-donut-score { color: #f2840e; font-size: 46px; font-weight: 900; line-height: 1; direction: ltr; }
+    .edubia-donut-score { color: #fb8500; font-size: 46px; font-weight: 900; line-height: 1; direction: ltr; }
     .edubia-donut-sub { color: #687590; font-size: 12px; font-weight: 900; margin: 4px 0; }
-    .edubia-stars { color: #f2840e; letter-spacing: 2px; font-size: 16px; direction: ltr; }
+    .edubia-stars { color: #fb8500; letter-spacing: 2px; font-size: 16px; direction: ltr; }
     .edubia-overall-label { font-weight: 900; font-size: 20px; margin-bottom: 10px; }
     .edubia-ribbon { color: white; background: linear-gradient(135deg, #ffbd73, #f27c0b); padding: 7px 26px; font-size: 15px; font-weight: 900; clip-path: polygon(10% 0, 90% 0, 100% 50%, 90% 100%, 10% 100%, 0 50%); }
 
@@ -256,7 +262,7 @@
     .edubia-attendance-grid { display: grid; grid-template-columns: 1.15fr 1fr 1fr 1fr; gap: 12px; align-items: center; direction: ltr; }
     .edubia-attendance-grid > * { direction: rtl; }
     .edubia-rating-lines { font-weight: 800; color: #17233d; line-height: 2.3; }
-    .edubia-rating-lines .stars { color: #f28a14; direction: ltr; display: inline-block; margin-inline-start: 12px; letter-spacing: 2px; }
+    .edubia-rating-lines .stars { color: #fb8500; direction: ltr; display: inline-block; margin-inline-start: 12px; letter-spacing: 2px; }
     .edubia-attendance-stat { border: 1px solid #e3e9f2; border-radius: 14px; min-height: 80px; display: grid; place-items: center; text-align: center; color: #66728c; font-weight: 800; }
     .edubia-attendance-stat strong { color: #08265a; font-size: 30px; direction: ltr; }
     .edubia-attendance-stat.present strong { color: #18a457; }
@@ -273,7 +279,7 @@
     .edubia-note p { margin: 0; color: #5d6678; font-size: 15px; font-weight: 700; line-height: 1.9; }
     .edubia-bullets { margin: 0; padding: 0 18px 0 0; color: #5d6678; font-weight: 700; line-height: 1.8; }
     .edubia-bullets li { margin-bottom: 8px; }
-    .edubia-bullets li::marker { color: #f28a14; }
+    .edubia-bullets li::marker { color: #fb8500; }
 
     .edubia-badge-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; direction: ltr; }
     .edubia-badge-grid > * { direction: rtl; }
@@ -517,6 +523,9 @@
       explained,
       commitmentAvg: average(feedbackItems.map(item => item.commitment_score), avg || 0),
       participationAvg: average(feedbackItems.map(item => item.participation_score), avg || 0),
+      selectedRange: payload.selectedRange || null,
+      rawFeedbackItems: feedbackItems,
+      rawSessions: sessions,
     };
   }
 
@@ -590,6 +599,19 @@
     return `<ul class="edubia-bullets">${items.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
   }
 
+  function edubiaLogoSvg() {
+    return `
+      <svg class="edubia-owl-svg" viewBox="0 0 64 64" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+        <g fill="none" stroke="#fb8500" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 24c0-8 6-14 14-14 3 0 6 1 9 3 3-2 6-3 9-3 8 0 14 6 14 14 0 10-8 22-23 28-1 .5-2 .5-3 0C22 46 14 34 14 24Z" />
+          <circle cx="26" cy="28" r="6" />
+          <circle cx="44" cy="28" r="6" />
+          <path d="M32 35l5 5 5-5" />
+          <path d="M19 14 11 8" />
+        </g>
+      </svg>`;
+  }
+
   function reportHtml(metrics) {
     const stripText = `أداء ${metrics.studentName} يضعه ضمن ${metrics.rank} من الطلاب في مساق ${metrics.course} هذا الشهر.`;
     const teacherNote = [
@@ -631,7 +653,7 @@
         <div class="edubia-report-content">
           <section class="edubia-hero">
             <div class="edubia-hero-top">
-              <div class="edubia-logo-row"><span class="edubia-logo-text">Edubia</span><span class="edubia-logo-mark">🦉</span></div>
+              <div class="edubia-logo-row"><span class="edubia-logo-text">Edubia</span><span class="edubia-logo-mark">${edubiaLogoSvg()}</span></div>
               <span class="edubia-pill">تقرير متابعة الطالب</span>
             </div>
             <div class="edubia-student-title">
@@ -779,6 +801,55 @@
     return String(name).replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, " ").trim();
   }
 
+  function buildReportData(payload) {
+    const source = payload || {};
+    const metrics = buildMetrics(source);
+    return {
+      generated_at: new Date().toISOString(),
+      format_version: "edubia-feedback-v2",
+      selected_range: source.selectedRange || null,
+      student: source.student || { name: metrics.studentName },
+      summary: {
+        student_name: metrics.studentName,
+        course: metrics.course,
+        level: metrics.level,
+        instructor: metrics.instructor,
+        date: metrics.date,
+        latest_session: metrics.sessionNo,
+        sessions_count: metrics.sessionCount,
+        average_score: metrics.avg,
+        grade: metrics.grade,
+        rating: metrics.rating,
+        rank: metrics.rank,
+        attendance_percentage: metrics.attendancePct,
+        homework_done: metrics.homeworkDone,
+        homework_total: metrics.homeworkTotal,
+        learning_pace: metrics.learningPace,
+      },
+      skills: metrics.skills,
+      sessions: source.sessions || [],
+      feedback: source.feedbackItems || [],
+    };
+  }
+
+  function downloadBlob(fileName, mimeType, content) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadStudentReportJson(payload) {
+    const data = buildReportData(payload || {});
+    const fileName = safeFileName(`feedback ${data.summary.student_name} — Edubia.json`);
+    downloadBlob(fileName, "application/json;charset=utf-8", JSON.stringify(data, null, 2));
+  }
+
   async function downloadStudentReport(payload) {
     if (!window.html2canvas || !window.jspdf?.jsPDF) {
       alert("PDF libraries are still loading. Please wait a few seconds and try again.");
@@ -804,15 +875,22 @@
       const pdfHeight = pdf.internal.pageSize.getHeight();
 
       for (let index = 0; index < pages.length; index++) {
-        const canvas = await window.html2canvas(pages[index], {
+        const page = pages[index];
+        const canvas = await window.html2canvas(page, {
           scale: 2,
           useCORS: true,
           backgroundColor: "#ffffff",
           logging: false,
+          width: 794,
+          height: 1123,
+          windowWidth: 794,
+          windowHeight: 1123,
+          scrollX: 0,
+          scrollY: 0,
         });
-        const image = canvas.toDataURL("image/jpeg", 0.98);
+        const image = canvas.toDataURL("image/png");
         if (index > 0) pdf.addPage();
-        pdf.addImage(image, "JPEG", 0, 0, pdfWidth, pdfHeight);
+        pdf.addImage(image, "PNG", 0, 0, pdfWidth, pdfHeight, undefined, "FAST");
       }
 
       const fileName = safeFileName(`تقرير الطالب ${metrics.studentName} — Edubia.pdf`);
@@ -822,5 +900,5 @@
     }
   }
 
-  window.EdubiaReport = { downloadStudentReport, buildMetrics };
+  window.EdubiaReport = { downloadStudentReport, downloadStudentReportJson, buildReportData, buildMetrics };
 })();
