@@ -2,14 +2,13 @@ const DAYS = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"
 const HOURS = [14, 15, 16, 17, 18, 19, 20, 21, 22];
 const TYPE_LABELS = { paid: "Paid", cover: "Cover", covered: "Cover", free: "Free" };
 const TEMPORARY_TYPES = ["cover", "covered", "free"];
-const SESSION_UNLOCK_KEY = "edubia_coordinator_unlocked";
 const SESSION_DURATION_HOURS = 1;
 const SCHEDULE_DAY_INDEX = Object.fromEntries(DAYS.map((day, index) => [day, index]));
 
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    persistSession: true,
-    autoRefreshToken: true,
+    persistSession: false,
+    autoRefreshToken: false,
     detectSessionInUrl: true,
   },
 });
@@ -17,13 +16,8 @@ const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 let schedule = [];
 let feedback = [];
 let loadTimerId = null;
-let authRenderPromise = null;
 let downloadTargetFeedbackId = null;
 
-const loginPanel = document.getElementById("coordinatorLoginPanel");
-const contentPanel = document.getElementById("coordinatorContent");
-const actionsPanel = document.getElementById("coordinatorActions");
-const loginForm = document.getElementById("coordinatorLoginForm");
 const scheduleTable = document.getElementById("publicScheduleTable");
 const feedbackBody = document.getElementById("publicFeedbackBody");
 const publicSearch = document.getElementById("publicSearch");
@@ -201,7 +195,7 @@ async function loadData() {
 
   if (scheduleResult.error || feedbackResult.error) {
     console.error(scheduleResult.error || feedbackResult.error);
-    scheduleTable.innerHTML = `<tbody><tr><td>Could not load data. Make sure database_update_existing_supabase.sql was run in Supabase and the coordinator is logged in.</td></tr></tbody>`;
+    scheduleTable.innerHTML = `<tbody><tr><td>Could not load data. Make sure database_update_existing_supabase.sql was run in Supabase and public coordinator view grants are enabled.</td></tr></tbody>`;
     return;
   }
 
@@ -212,34 +206,9 @@ async function loadData() {
   renderFeedback();
 }
 
-async function renderAuth() {
-  if (authRenderPromise) return authRenderPromise;
-
-  authRenderPromise = (async () => {
-    const { data } = await client.auth.getSession();
-    const hasSupabaseSession = Boolean(data.session);
-    const coordinatorUnlocked = sessionStorage.getItem(SESSION_UNLOCK_KEY) === "true";
-    const loggedIn = hasSupabaseSession && coordinatorUnlocked;
-
-    loginPanel.classList.toggle("hidden", loggedIn);
-    contentPanel.classList.toggle("hidden", !loggedIn);
-    actionsPanel.classList.toggle("hidden", !loggedIn);
-
-    if (loggedIn) {
-      await loadData();
-      startAutoRefresh();
-    } else {
-      stopAutoRefresh();
-      schedule = [];
-      feedback = [];
-    }
-  })();
-
-  try {
-    return await authRenderPromise;
-  } finally {
-    authRenderPromise = null;
-  }
+async function initPublicCoordinatorView() {
+  await loadData();
+  startAutoRefresh();
 }
 
 function renderSchedule() {
@@ -363,25 +332,6 @@ async function downloadReportFromFeedback(feedbackId) {
   await downloadReportFromFeedbackWithFormat(feedbackId, "pdf", { from: null, to: null });
 }
 
-async function loginCoordinator(email, password) {
-  const loginButton = document.querySelector('#coordinatorLoginForm button[type="submit"]');
-  loginButton.disabled = true;
-  loginButton.textContent = "Logging in...";
-
-  const { error } = await client.auth.signInWithPassword({ email, password });
-
-  loginButton.disabled = false;
-  loginButton.textContent = "Login";
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  sessionStorage.setItem(SESSION_UNLOCK_KEY, "true");
-  await renderAuth();
-}
-
 coordinatorDownloadForm?.addEventListener("submit", async event => {
   event.preventDefault();
   if (!downloadTargetFeedbackId) return;
@@ -400,28 +350,10 @@ coordinatorDownloadForm?.addEventListener("submit", async event => {
 
 document.getElementById("closeCoordinatorDownloadModal")?.addEventListener("click", closeCoordinatorDownloadModal);
 
-loginForm.addEventListener("submit", async event => {
-  event.preventDefault();
-  await loginCoordinator(
-    document.getElementById("coordinatorEmail").value.trim(),
-    document.getElementById("coordinatorPassword").value
-  );
-});
 
-document.getElementById("refreshBtn").addEventListener("click", loadData);
-document.getElementById("coordinatorLogoutBtn").addEventListener("click", async () => {
-  sessionStorage.removeItem(SESSION_UNLOCK_KEY);
-  await client.auth.signOut();
-  await renderAuth();
-});
+document.getElementById("refreshBtn")?.addEventListener("click", loadData);
 publicSearch.addEventListener("input", renderSchedule);
 
-client.auth.onAuthStateChange(() => {
-  setTimeout(() => {
-    renderAuth();
-  }, 0);
-});
-
 if (checkConfig()) {
-  renderAuth();
+  initPublicCoordinatorView();
 }

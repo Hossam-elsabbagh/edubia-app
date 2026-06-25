@@ -156,7 +156,7 @@ end;
 $$;
 
 revoke all on function public.cleanup_expired_temporary_sessions() from public;
-grant execute on function public.cleanup_expired_temporary_sessions() to authenticated;
+grant execute on function public.cleanup_expired_temporary_sessions() to anon, authenticated;
 
 alter table public.students enable row level security;
 alter table public.sessions enable row level security;
@@ -195,7 +195,5 @@ grant select, insert, update, delete on table public.students to authenticated;
 grant select, insert, update, delete on table public.sessions to authenticated;
 grant select, insert, update, delete on table public.feedback to authenticated;
 
-revoke all on table public.coordinator_schedule from anon;
-revoke all on table public.coordinator_feedback from anon;
-grant select on public.coordinator_schedule to authenticated;
-grant select on public.coordinator_feedback to authenticated;
+grant select on public.coordinator_schedule to anon, authenticated;
+grant select on public.coordinator_feedback to anon, authenticated;

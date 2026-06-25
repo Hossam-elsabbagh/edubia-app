@@ -9,8 +9,8 @@ const SCHEDULE_DAY_INDEX = Object.fromEntries(DAYS.map((day, index) => [day, ind
 
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    persistSession: true,
-    autoRefreshToken: true,
+    persistSession: false,
+    autoRefreshToken: false,
     detectSessionInUrl: true,
   },
 });

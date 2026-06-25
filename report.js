@@ -117,8 +117,7 @@
 
     .edubia-logo-row { display: flex; align-items: center; gap: 14px; direction: ltr; }
     .edubia-logo-text { color: white; font-family: "Inter", "Cairo", sans-serif; font-size: 30px; font-weight: 800; letter-spacing: -0.03em; }
-    .edubia-logo-mark { width: 58px; height: 58px; border-radius: 16px; background: white; display: grid; place-items: center; box-shadow: 0 10px 22px rgba(0,0,0,.12); }
-    .edubia-owl-svg { width: 42px; height: 42px; display: block; }
+    .edubia-logo-mark { width: 58px; height: 52px; display: block; object-fit: contain; filter: drop-shadow(0 10px 22px rgba(0,0,0,.12)); }
 
     .edubia-student-title {
       margin-top: 60px;
@@ -599,17 +598,8 @@
     return `<ul class="edubia-bullets">${items.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
   }
 
-  function edubiaLogoSvg() {
-    return `
-      <svg class="edubia-owl-svg" viewBox="0 0 64 64" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-        <g fill="none" stroke="#fb8500" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 24c0-8 6-14 14-14 3 0 6 1 9 3 3-2 6-3 9-3 8 0 14 6 14 14 0 10-8 22-23 28-1 .5-2 .5-3 0C22 46 14 34 14 24Z" />
-          <circle cx="26" cy="28" r="6" />
-          <circle cx="44" cy="28" r="6" />
-          <path d="M32 35l5 5 5-5" />
-          <path d="M19 14 11 8" />
-        </g>
-      </svg>`;
+  function edubiaLogoImage() {
+    return `<img class="edubia-logo-mark" src="${EDUBIA_LOGO_DATA_URL}" alt="Edubia logo" />`;
   }
 
   function reportHtml(metrics) {
@@ -653,7 +643,7 @@
         <div class="edubia-report-content">
           <section class="edubia-hero">
             <div class="edubia-hero-top">
-              <div class="edubia-logo-row"><span class="edubia-logo-text">Edubia</span><span class="edubia-logo-mark">${edubiaLogoSvg()}</span></div>
+              <div class="edubia-logo-row"><span class="edubia-logo-text">Edubia</span>${edubiaLogoImage()}</div>
               <span class="edubia-pill">تقرير متابعة الطالب</span>
             </div>
             <div class="edubia-student-title">

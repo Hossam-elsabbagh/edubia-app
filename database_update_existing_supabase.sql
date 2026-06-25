@@ -1,6 +1,6 @@
 -- Edubia Schedule App V3.2 patch
 -- Run this once in Supabase SQL Editor after uploading the new GitHub files.
--- It fixes coordinator login permissions, paid/free/cover colors, available-time view, and temporary session cleanup.
+-- It fixes public coordinator permissions, paid/free/cover colors, available-time view, and temporary session cleanup.
 
 create extension if not exists "pgcrypto";
 
@@ -146,11 +146,8 @@ begin
 end;
 $$;
 
--- Coordinator page now requires login, so views/RPC are authenticated only.
-revoke all on table public.coordinator_schedule from anon;
-revoke all on table public.coordinator_feedback from anon;
-revoke all on function public.cleanup_expired_temporary_sessions() from anon;
-
-grant select on table public.coordinator_schedule to authenticated;
-grant select on table public.coordinator_feedback to authenticated;
-grant execute on function public.cleanup_expired_temporary_sessions() to authenticated;
+-- Coordinator page is a public read-only link.
+-- Admin tables stay protected, but these safe views are readable by anyone with the coordinator link.
+grant select on table public.coordinator_schedule to anon, authenticated;
+grant select on table public.coordinator_feedback to anon, authenticated;
+grant execute on function public.cleanup_expired_temporary_sessions() to anon, authenticated;

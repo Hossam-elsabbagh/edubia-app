@@ -12,23 +12,32 @@ This version is made for real deployment with a live coordinator link.
   - Copy/Open coordinator link
 
 - Coordinator page: `coordinator.html`
-  - Opens with a coordinator login first
-  - Read-only after login
+  - Opens directly from the public coordinator link
+  - Read-only without requiring coordinator login
   - Shows schedule and feedback only
   - Does NOT show prices
   - Shows paid/free/cover status using colors
   - Shows Available time in week under the schedule
   - Auto-refreshes every 10 seconds
+  - Download feedback as PDF or JSON with an optional From/To session range
 
 - Data is stored in Supabase, not in local browser storage.
   This means when you update from the admin page, the coordinator page updates too.
 
 ---
 
+## V4 behavior notes
+
+- Opening the Vercel deployment root (`index.html`) shows the Admin Login / Create Admin Account page first. Admin sessions are not stored permanently in the browser.
+- The `coordinator.html` link is public read-only and opens directly without asking the coordinator to login.
+- Keep `config.js` unchanged when uploading this patch, because it contains your Supabase URL and anon key.
+- Upload `edubia-logo.png` with the other files. The PDF report uses the exact logo image file provided by Edubia.
+
 ## Files
 
 - `index.html` — Admin dashboard
 - `coordinator.html` — Public coordinator read-only view
+- `edubia-logo.png` — Exact Edubia logo image used in the report
 - `styles.css` — White/simple styling
 - `app.js` — Admin logic
 - `coordinator.js` — Coordinator logic
