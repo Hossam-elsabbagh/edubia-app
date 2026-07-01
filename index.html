@@ -283,13 +283,31 @@
 
         <label>
           Day
-          <select id="editSessionDay" required></select>
+          <select id="editSessionDay" required>
+            <option value="Saturday">Saturday</option>
+            <option value="Sunday">Sunday</option>
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+          </select>
         </label>
 
         <label>
           Time
-          <select id="editSessionHour" required></select>
-          <small class="hint">Only free times appear. The current session time stays available for this edit.</small>
+          <select id="editSessionHour" required>
+            <option value="14">2 PM</option>
+            <option value="15">3 PM</option>
+            <option value="16">4 PM</option>
+            <option value="17">5 PM</option>
+            <option value="18">6 PM</option>
+            <option value="19">7 PM</option>
+            <option value="20">8 PM</option>
+            <option value="21">9 PM</option>
+            <option value="22">10 PM</option>
+          </select>
+          <small class="hint">Free times are selectable. Busy and unavailable times appear but cannot be selected.</small>
         </label>
       </div>
 

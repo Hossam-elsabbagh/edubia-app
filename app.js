@@ -365,8 +365,18 @@ function fillScoreSelects() {
   });
 }
 
+function buildDayOptions(selectedDay = "") {
+  return DAYS.map(day => `<option value="${day}"${day === selectedDay ? " selected" : ""}>${day}</option>`).join("");
+}
+
 function initSelects() {
-  sessionDay.innerHTML = DAYS.map(day => `<option value="${day}">${day}</option>`).join("");
+  sessionDay.innerHTML = buildDayOptions();
+
+  const editDaySelect = document.getElementById("editSessionDay");
+  if (editDaySelect) {
+    editDaySelect.innerHTML = buildDayOptions();
+  }
+
   fillScoreSelects();
   updateAvailableTimeOptions();
 }
@@ -390,6 +400,79 @@ function updateAvailableTimeOptions(preferredHour = null) {
 
   if (preferredHour !== null && available.includes(Number(preferredHour))) {
     sessionHour.value = String(preferredHour);
+  }
+}
+
+function isHourAvailableForEdit(day, hour, sessionId) {
+  const session = getSessionById(sessionId);
+  const isCurrentSlot = session && session.day === day && Number(session.hour) === Number(hour);
+
+  if (isCurrentSlot) return true;
+
+  const takenByAnotherSession = state.sessions.some(item =>
+    String(item.id) !== String(sessionId) &&
+    item.day === day &&
+    Number(item.hour) === Number(hour)
+  );
+
+  return !takenByAnotherSession && !isSlotUnavailable(day, hour);
+}
+
+function getAvailableHoursForEdit(day, sessionId) {
+  return HOURS.filter(hour => isHourAvailableForEdit(day, hour, sessionId));
+}
+
+function getEditHourOptionState(day, hour, sessionId) {
+  const session = getSessionById(sessionId);
+  const isCurrentSlot = session && session.day === day && Number(session.hour) === Number(hour);
+
+  if (isCurrentSlot) {
+    return { disabled: false, suffix: "Current" };
+  }
+
+  const takenByAnotherSession = state.sessions.some(item =>
+    String(item.id) !== String(sessionId) &&
+    item.day === day &&
+    Number(item.hour) === Number(hour)
+  );
+
+  if (takenByAnotherSession) {
+    return { disabled: true, suffix: "Busy" };
+  }
+
+  if (isSlotUnavailable(day, hour)) {
+    return { disabled: true, suffix: "Unavailable" };
+  }
+
+  return { disabled: false, suffix: "Free" };
+}
+
+function updateEditSessionTimeOptions(preferredHour = null) {
+  const editDaySelect = document.getElementById("editSessionDay");
+  const editHourSelect = document.getElementById("editSessionHour");
+  if (!editDaySelect || !editHourSelect || !editingSessionId) return;
+
+  const session = getSessionById(editingSessionId);
+  const selectedDay = editDaySelect.value || session?.day || DAYS[0];
+  const preferred = preferredHour !== null ? Number(preferredHour) : null;
+
+  editDaySelect.innerHTML = buildDayOptions(selectedDay);
+  editHourSelect.disabled = false;
+  editHourSelect.innerHTML = HOURS.map(hour => {
+    const optionState = getEditHourOptionState(selectedDay, hour, editingSessionId);
+    const disabledAttr = optionState.disabled ? " disabled" : "";
+    const selectedAttr = preferred !== null && Number(hour) === preferred ? " selected" : "";
+    return `<option value="${hour}"${disabledAttr}${selectedAttr}>${formatHour(hour)} - ${optionState.suffix}</option>`;
+  }).join("");
+
+  if (preferred !== null && isHourAvailableForEdit(selectedDay, preferred, editingSessionId)) {
+    editHourSelect.value = String(preferred);
+    return;
+  }
+
+  const firstAvailableHour = HOURS.find(hour => isHourAvailableForEdit(selectedDay, hour, editingSessionId));
+  if (firstAvailableHour !== undefined) {
+    editHourSelect.value = String(firstAvailableHour);
   }
 }
 
@@ -833,10 +916,15 @@ function openEditSession(sessionId) {
   editingSessionId = session.id;
 
   document.getElementById("editSessionStudentName").textContent = student?.name || "Edit Session";
-  document.getElementById("editSessionMeta").textContent = `${session.day} · ${formatHour(Number(session.hour))}`;
+  document.getElementById("editSessionMeta").textContent = `Current: ${session.day} · ${formatHour(Number(session.hour))}`;
   document.getElementById("editSessionNumber").value = session.current_session || "";
   document.getElementById("editSessionCourse").value = session.course || "";
   document.getElementById("editSessionType").value = session.type || "paid";
+
+  const editDaySelect = document.getElementById("editSessionDay");
+  editDaySelect.innerHTML = buildDayOptions(session.day);
+  editDaySelect.value = session.day;
+  updateEditSessionTimeOptions(Number(session.hour));
 
   editSessionModal.showModal();
 }
@@ -856,17 +944,32 @@ async function handleEditSessionSubmit(event) {
   const course = document.getElementById("editSessionCourse").value.trim();
   const type = document.getElementById("editSessionType").value;
   const currentSession = document.getElementById("editSessionNumber").value.trim();
+  const day = document.getElementById("editSessionDay").value;
+  const hour = Number(document.getElementById("editSessionHour").value);
 
   if (!course || !currentSession) {
     alert("Please fill course and session number.");
     return;
   }
 
-  const expiryData = getSessionDateAndExpiry(type, session.day, session.hour);
+  if (!day || !hour) {
+    alert("Please choose an available day and time.");
+    return;
+  }
+
+  if (!isHourAvailableForEdit(day, hour, editingSessionId)) {
+    alert("This time is already busy or unavailable. Please choose another time.");
+    updateEditSessionTimeOptions();
+    return;
+  }
+
+  const expiryData = getSessionDateAndExpiry(type, day, hour);
 
   const { error } = await client
     .from("sessions")
     .update({
+      day,
+      hour,
       course,
       type,
       current_session: currentSession,
@@ -1245,6 +1348,7 @@ document.getElementById("deleteStudentFromDetailsBtn").addEventListener("click",
 
 document.getElementById("closeEditSessionModal")?.addEventListener("click", closeEditSession);
 document.getElementById("cancelEditSessionBtn")?.addEventListener("click", closeEditSession);
+document.getElementById("editSessionDay")?.addEventListener("change", () => updateEditSessionTimeOptions());
 editSessionForm?.addEventListener("submit", handleEditSessionSubmit);
 
 document.getElementById("cancelFeedbackEditBtn")?.addEventListener("click", () => {

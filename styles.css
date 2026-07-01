@@ -1276,3 +1276,9 @@ h3 {
     grid-template-columns: 1fr;
   }
 }
+
+/* Keep dropdown items readable even when the browser/site is in dark mode. */
+select option {
+  color: #1f2937;
+  background: #ffffff;
+}
