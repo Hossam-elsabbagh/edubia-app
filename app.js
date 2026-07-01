@@ -15,7 +15,7 @@ const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   },
 });
 
-let state = { students: [], sessions: [], feedback: [] };
+let state = { students: [], sessions: [], feedback: [], unavailableSlots: [] };
 let selectedStudentId = null;
 let feedbackStudentId = null;
 let prefillStudentId = null;
@@ -298,8 +298,55 @@ function isSlotTaken(day, hour) {
   return state.sessions.some(session => session.day === day && Number(session.hour) === Number(hour));
 }
 
+function getUnavailableSlot(day, hour) {
+  return (state.unavailableSlots || []).find(slot => slot.day === day && Number(slot.hour) === Number(hour));
+}
+
+function isSlotUnavailable(day, hour) {
+  return Boolean(getUnavailableSlot(day, hour));
+}
+
+function isSlotBusy(day, hour) {
+  return isSlotTaken(day, hour) || isSlotUnavailable(day, hour);
+}
+
 function getAvailableHours(day) {
-  return HOURS.filter(hour => !isSlotTaken(day, hour));
+  return HOURS.filter(hour => !isSlotBusy(day, hour));
+}
+
+async function markSlotUnavailable(day, hour) {
+  if (isSlotTaken(day, hour)) {
+    alert("This slot already has a session, so it is already busy.");
+    return;
+  }
+
+  const { error } = await client
+    .from("unavailable_slots")
+    .upsert({ day, hour }, { onConflict: "day,hour" });
+
+  if (error) {
+    console.error(error);
+    alert("Could not mark this slot unavailable. Run database_update_existing_supabase.sql in Supabase first.");
+    return;
+  }
+
+  await refreshData();
+}
+
+async function markSlotAvailable(day, hour) {
+  const { error } = await client
+    .from("unavailable_slots")
+    .delete()
+    .eq("day", day)
+    .eq("hour", Number(hour));
+
+  if (error) {
+    console.error(error);
+    alert("Could not make this slot available again. Check Supabase settings.");
+    return;
+  }
+
+  await refreshData();
 }
 
 function fillScoreSelects() {
@@ -351,21 +398,23 @@ async function refreshData(options = {}) {
     await cleanupExpiredTemporarySessions();
   }
 
-  const [studentsResult, sessionsResult, feedbackResult] = await Promise.all([
+  const [studentsResult, sessionsResult, feedbackResult, unavailableResult] = await Promise.all([
     client.from("students").select("*").order("created_at", { ascending: true }),
     client.from("sessions").select("*").order("created_at", { ascending: true }),
     client.from("feedback").select("*").order("created_at", { ascending: false }),
+    client.from("unavailable_slots").select("*").order("created_at", { ascending: true }),
   ]);
 
-  if (studentsResult.error || sessionsResult.error || feedbackResult.error) {
-    alert("Could not load data. Make sure you are logged in and database.sql was run in Supabase.");
-    console.error(studentsResult.error || sessionsResult.error || feedbackResult.error);
+  if (studentsResult.error || sessionsResult.error || feedbackResult.error || unavailableResult.error) {
+    alert("Could not load data. Make sure you are logged in and database_update_existing_supabase.sql was run in Supabase.");
+    console.error(studentsResult.error || sessionsResult.error || feedbackResult.error || unavailableResult.error);
     return;
   }
 
   state.students = studentsResult.data || [];
   state.sessions = (sessionsResult.data || []).filter(session => !isTemporarySessionExpired(session));
   state.feedback = feedbackResult.data || [];
+  state.unavailableSlots = unavailableResult.data || [];
 
   renderAll();
 }
@@ -434,7 +483,21 @@ function renderSchedule() {
       html += `<td>`;
 
       if (sessions.length === 0) {
-        html += `<div class="empty-slot" data-day="${day}" data-hour="${hour}">Available</div>`;
+        if (isSlotUnavailable(day, hour)) {
+          html += `
+            <div class="unavailable-slot" data-day="${day}" data-hour="${hour}">
+              <span>Unavailable</span>
+              <button type="button" class="slot-action-btn available-toggle" data-day="${day}" data-hour="${hour}">Make available</button>
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="empty-slot" data-day="${day}" data-hour="${hour}">
+              <span>Available</span>
+              <button type="button" class="slot-action-btn busy-toggle" data-day="${day}" data-hour="${hour}">Busy</button>
+            </div>
+          `;
+        }
       } else {
         for (const session of sessions) {
           const student = getStudent(session.student_id);
@@ -467,11 +530,26 @@ function renderSchedule() {
   scheduleTable.innerHTML = html;
 
   document.querySelectorAll(".empty-slot").forEach(slot => {
-    slot.addEventListener("click", () => {
+    slot.addEventListener("click", event => {
+      if (event.target.closest(".busy-toggle")) return;
       openAddStudentModal({
         day: slot.dataset.day,
         hour: Number(slot.dataset.hour),
       });
+    });
+  });
+
+  document.querySelectorAll(".busy-toggle").forEach(btn => {
+    btn.addEventListener("click", event => {
+      event.stopPropagation();
+      markSlotUnavailable(btn.dataset.day, Number(btn.dataset.hour));
+    });
+  });
+
+  document.querySelectorAll(".available-toggle").forEach(btn => {
+    btn.addEventListener("click", event => {
+      event.stopPropagation();
+      markSlotAvailable(btn.dataset.day, Number(btn.dataset.hour));
     });
   });
 
@@ -654,8 +732,8 @@ async function handleStudentFormSubmit(event) {
     return;
   }
 
-  if (isSlotTaken(day, hour)) {
-    alert("This time is already busy. Please choose another available time.");
+  if (isSlotBusy(day, hour)) {
+    alert("This time is already busy or unavailable. Please choose another available time.");
     updateAvailableTimeOptions();
     return;
   }
@@ -1121,7 +1199,7 @@ document.getElementById("signupBtn").addEventListener("click", async () => {
 
 document.getElementById("logoutBtn").addEventListener("click", async () => {
   await client.auth.signOut();
-  state = { students: [], sessions: [], feedback: [] };
+  state = { students: [], sessions: [], feedback: [], unavailableSlots: [] };
   await renderAuth();
 });
 

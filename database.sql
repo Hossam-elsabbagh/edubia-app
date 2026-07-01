@@ -25,6 +25,15 @@ create table if not exists public.sessions (
   created_at timestamptz not null default now()
 );
 
+
+create table if not exists public.unavailable_slots (
+  id uuid primary key default gen_random_uuid(),
+  day text not null check (day in ('Saturday','Sunday','Monday','Tuesday','Wednesday','Thursday','Friday')),
+  hour integer not null check (hour between 14 and 22),
+  created_at timestamptz not null default now(),
+  unique(day, hour)
+);
+
 create table if not exists public.feedback (
   id uuid primary key default gen_random_uuid(),
   student_id uuid not null references public.students(id) on delete cascade,
@@ -67,6 +76,15 @@ select
   s.expires_at
 from public.sessions s
 join public.students st on st.id = s.student_id;
+
+
+create or replace view public.coordinator_unavailable_slots as
+select
+  id,
+  day,
+  hour,
+  created_at
+from public.unavailable_slots;
 
 create or replace view public.coordinator_feedback as
 select
@@ -162,6 +180,18 @@ alter table public.students enable row level security;
 alter table public.sessions enable row level security;
 alter table public.feedback enable row level security;
 
+alter table public.unavailable_slots enable row level security;
+
+drop policy if exists "admin can manage unavailable slots" on public.unavailable_slots;
+
+create policy "admin can manage unavailable slots"
+on public.unavailable_slots
+for all
+to authenticated
+using (true)
+with check (true);
+
+
 drop policy if exists "admin can manage students" on public.students;
 drop policy if exists "admin can manage sessions" on public.sessions;
 drop policy if exists "admin can manage feedback" on public.feedback;
@@ -190,6 +220,11 @@ with check (true);
 revoke all on table public.students from anon;
 revoke all on table public.sessions from anon;
 revoke all on table public.feedback from anon;
+
+revoke all on table public.unavailable_slots from anon;
+grant select, insert, update, delete on table public.unavailable_slots to authenticated;
+grant select on public.coordinator_unavailable_slots to anon, authenticated;
+
 
 grant select, insert, update, delete on table public.students to authenticated;
 grant select, insert, update, delete on table public.sessions to authenticated;

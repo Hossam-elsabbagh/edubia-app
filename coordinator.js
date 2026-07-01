@@ -15,6 +15,7 @@ const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 
 let schedule = [];
 let feedback = [];
+let unavailableSlots = [];
 let loadTimerId = null;
 let downloadTargetFeedbackId = null;
 let expandedFeedbackStudentKey = null;
@@ -272,8 +273,16 @@ function getSessionsForSlot(day, hour) {
   return schedule.filter(session => session.day === day && Number(session.hour) === Number(hour));
 }
 
+function getUnavailableSlot(day, hour) {
+  return unavailableSlots.find(slot => slot.day === day && Number(slot.hour) === Number(hour));
+}
+
+function isSlotUnavailable(day, hour) {
+  return Boolean(getUnavailableSlot(day, hour));
+}
+
 function getAvailableHours(day) {
-  return HOURS.filter(hour => getSessionsForSlot(day, hour).length === 0);
+  return HOURS.filter(hour => getSessionsForSlot(day, hour).length === 0 && !isSlotUnavailable(day, hour));
 }
 
 function startAutoRefresh() {
@@ -297,19 +306,21 @@ async function cleanupExpiredTemporarySessions() {
 async function loadData() {
   await cleanupExpiredTemporarySessions();
 
-  const [scheduleResult, feedbackResult] = await Promise.all([
+  const [scheduleResult, feedbackResult, unavailableResult] = await Promise.all([
     client.from("coordinator_schedule").select("*").order("hour", { ascending: true }),
     client.from("coordinator_feedback").select("*").order("created_at", { ascending: false }),
+    client.from("coordinator_unavailable_slots").select("*").order("hour", { ascending: true }),
   ]);
 
-  if (scheduleResult.error || feedbackResult.error) {
-    console.error(scheduleResult.error || feedbackResult.error);
+  if (scheduleResult.error || feedbackResult.error || unavailableResult.error) {
+    console.error(scheduleResult.error || feedbackResult.error || unavailableResult.error);
     scheduleTable.innerHTML = `<tbody><tr><td>Could not load data. Make sure database_update_existing_supabase.sql was run in Supabase and public coordinator view grants are enabled.</td></tr></tbody>`;
     return;
   }
 
   schedule = (scheduleResult.data || []).filter(session => !isTemporarySessionExpired(session));
   feedback = feedbackResult.data || [];
+  unavailableSlots = unavailableResult.data || [];
 
   renderSchedule();
   renderFeedback();
@@ -341,7 +352,11 @@ function renderSchedule() {
       html += `<td>`;
 
       if (sessions.length === 0) {
-        html += `<div class="empty-slot">Available</div>`;
+        if (isSlotUnavailable(day, hour)) {
+          html += `<div class="unavailable-slot"><span>Unavailable</span></div>`;
+        } else {
+          html += `<div class="empty-slot">Available</div>`;
+        }
       } else {
         for (const session of sessions) {
           const studentName = session.student_name || "Student";
