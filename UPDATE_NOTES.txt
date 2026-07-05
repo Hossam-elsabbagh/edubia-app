@@ -1,0 +1,19 @@
+Updated Edubia report download/edit flow
+
+Replace these files in GitHub:
+- report.js
+- app.js
+- coordinator.js
+- index.html
+- coordinator.html
+
+What changed:
+1. Download PDF/JSON now opens an edit screen before any file is downloaded.
+2. The edit screen shows a live PDF-style preview on the left and editable controls on the right.
+3. JSON download now uses the same Edubia report base structure:
+   app, v, lang, logoData, fields, skills, sessions, lessons, badges, modules.
+4. PDF download uses the same edited data and Edubia report layout.
+5. Badges now have a separate Emoji field, so you can enter emojis directly, not only text.
+6. You can add/remove badges, lessons, and modules before download.
+
+No Supabase database change is required.

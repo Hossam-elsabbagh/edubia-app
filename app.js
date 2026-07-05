@@ -279,7 +279,9 @@ async function downloadStudentReportByFormat(studentId, format, range) {
     selectedRange: range,
   };
 
-  if (format === "json") {
+  if (window.EdubiaReport?.openReportEditor) {
+    window.EdubiaReport.openReportEditor(payload, format);
+  } else if (format === "json") {
     window.EdubiaReport.downloadStudentReportJson(payload);
   } else {
     await window.EdubiaReport.downloadStudentReport(payload);
