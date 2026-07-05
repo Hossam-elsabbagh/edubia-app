@@ -448,182 +448,6 @@
     ], 0);
   }
 
-
-  function normalizeReportDraft(draft) {
-    if (!draft || typeof draft !== "object") return null;
-    const hasDraftShape = draft.fields || draft.skills || draft.sessions || draft.lessons || draft.badges || draft.modules;
-    if (!hasDraftShape) return null;
-    return {
-      app: draft.app || "edubia-report",
-      v: draft.v || 2,
-      lang: draft.lang || "ar",
-      logoData: draft.logoData ?? null,
-      fields: { ...(draft.fields || {}) },
-      skills: Array.isArray(draft.skills) ? draft.skills : [],
-      sessions: Array.isArray(draft.sessions) ? draft.sessions : [],
-      lessons: Array.isArray(draft.lessons) ? draft.lessons : [],
-      badges: Array.isArray(draft.badges) ? draft.badges : [],
-      modules: Array.isArray(draft.modules) ? draft.modules : [],
-    };
-  }
-
-  function numericText(value, fallback = "") {
-    if (value === null || value === undefined || value === "") return fallback;
-    return String(value);
-  }
-
-  function normalizeDuration(value) {
-    const text = numericText(value, DEFAULT_DURATION).trim();
-    if (!text) return DEFAULT_DURATION;
-    return /دقيقة|minute|min/i.test(text) ? text : `${text} دقيقة`;
-  }
-
-  function gradeScore(grade) {
-    const normalized = String(grade || "").trim().toUpperCase().replace(/\s+/g, "");
-    const map = { "A+": 4.9, "+A": 4.9, "A": 4.5, "A-": 4.2, "-A": 4.2, "B+": 3.9, "+B": 3.9, "B": 3.5, "B-": 3.2, "-B": 3.2, "C+": 2.9, "+C": 2.9, "C": 2.5, "C-": 2.1, "-C": 2.1, "F": 1 };
-    return map[normalized] || 0;
-  }
-
-  function draftSkillItems(draft, fallbackSkills) {
-    if (!draft?.skills?.length) return fallbackSkills;
-    return draft.skills.map((item, index) => ({
-      label: item.ar || item.en || fallbackSkills[index]?.label || `مهارة ${index + 1}`,
-      field: fallbackSkills[index]?.field || `skill_${index + 1}`,
-      score: clamp(asNumber(item.v, fallbackSkills[index]?.score || 0), 0, 5),
-      en: item.en || fallbackSkills[index]?.en || "",
-    }));
-  }
-
-  function draftLessonItems(draft, fallbackLessons, fallbackAvg) {
-    if (!draft?.lessons?.length) return fallbackLessons;
-    return draft.lessons.map((item, index) => {
-      const score = gradeScore(item.grade) || fallbackAvg || 0;
-      return {
-        lesson_title: item.ar || item.en || `جلسة ${index + 1}`,
-        lesson_title_en: item.en || item.ar || `S${index + 1}`,
-        grade: item.grade || gradeFromScore(score),
-        quiz: item.quiz || "—",
-        understanding_score: score,
-        problem_solving_score: score,
-        practical_score: score,
-        exercise_score: score,
-        participation_score: score,
-      };
-    });
-  }
-
-  function draftSessionScores(draft, fallbackScores) {
-    if (!draft?.sessions?.length) return fallbackScores;
-    return draft.sessions.map(item => clamp(asNumber(item.v, 0), 0, 5));
-  }
-
-  function defaultModules(course, progress) {
-    const safeCourse = course || "Python";
-    return [
-      {
-        ar: safeCourse,
-        en: safeCourse,
-        status: "ongoing",
-        pct: progress || 55,
-        d_ar: "يتقدم الطالب في المساق الحالي من خلال التطبيق العملي وحل التمارين وبناء مشروعات صغيرة خطوة بخطوة.",
-        d_en: "Current course progress with hands-on practice and guided projects.",
-      },
-      {
-        ar: "Web Development",
-        en: "Web Development",
-        status: "soon",
-        pct: 0,
-        d_ar: "يتعلم الطلاب تصميم وتطوير مواقع الويب باستخدام HTML وCSS وJavaScript وإنشاء صفحات ومواقع تفاعلية.",
-        d_en: "Design and build interactive websites using HTML, CSS, and JavaScript.",
-      },
-      {
-        ar: "App Development",
-        en: "App Development",
-        status: "soon",
-        pct: 0,
-        d_ar: "كورس لتصميم وتطوير تطبيقات الهواتف الذكية، حيث يتعلم الطلاب كيفية إنشاء تطبيقاتهم الخاصة وإضافة مميزات مختلفة لها.",
-        d_en: "Mobile application development with practical app features.",
-      },
-      {
-        ar: "Game Development",
-        en: "Game Development",
-        status: "soon",
-        pct: 0,
-        d_ar: "يتعلم الطلاب كيفية تصميم وتطوير الألعاب، من إنشاء الشخصيات والمراحل إلى إضافة المؤثرات والقواعد البرمجية.",
-        d_en: "Game design and development through characters, stages, effects, and rules.",
-      },
-      {
-        ar: "UI/UX Design",
-        en: "UI/UX Design",
-        status: "soon",
-        pct: 0,
-        d_ar: "يتعلم الطلاب تصميم واجهات المستخدم وتجربة المستخدم، وكيفية جعل التطبيقات والمواقع سهلة الاستخدام وجذابة للمستخدمين.",
-        d_en: "User interface and user experience design fundamentals.",
-      },
-      {
-        ar: "Graphic Design",
-        en: "Graphic Design",
-        status: "soon",
-        pct: 0,
-        d_ar: "كورس يركز على التصميم الإبداعي باستخدام أدوات التصميم المختلفة لإنشاء الشعارات، البوسترات، الإعلانات، والعروض التقديمية.",
-        d_en: "Creative design for logos, posters, ads, and presentations.",
-      },
-      {
-        ar: "Artificial Intelligence (AI)",
-        en: "Artificial Intelligence (AI)",
-        status: "soon",
-        pct: 0,
-        d_ar: "يتعرف الطلاب على أساسيات الذكاء الاصطناعي وتطبيقاته المختلفة، وكيفية تدريب النماذج وإنشاء مشاريع تعتمد على تقنيات AI الحديثة.",
-        d_en: "AI basics, model training, and modern AI-based projects.",
-      },
-    ];
-  }
-
-  function normalizeBadgeItems(items) {
-    return (items || []).map(item => ({
-      ic: item.ic || item.icon || "🏅",
-      t_ar: item.t_ar || item.title || "شارة",
-      t_en: item.t_en || "Badge",
-      d_ar: item.d_ar || item.text || "تم منح هذه الشارة بناءً على أداء الطالب خلال الفترة.",
-      d_en: item.d_en || "Awarded based on the student's performance during this period.",
-    }));
-  }
-
-  function defaultBadges(metricsLike) {
-    const hwDone = metricsLike.homeworkDone ?? 0;
-    const hwTotal = metricsLike.homeworkTotal ?? 0;
-    const attendance = metricsLike.attendancePct ?? 0;
-    return normalizeBadgeItems([
-      attendance >= 95 ? {
-        ic: "✅",
-        t_ar: "حضور كامل",
-        t_en: "Perfect Attendance",
-        d_ar: `تُمنح عند تحقيق نسبة حضور ${attendance}٪ خلال الفترة المحددة، وقد حضر الطالب معظم الحصص المسجلة.`,
-        d_en: `Awarded for an attendance rate of ${attendance}% during the selected period.`,
-      } : {
-        ic: "⏱️",
-        t_ar: "منضبط بالوقت",
-        t_en: "Timely Titan",
-        d_ar: "تُمنح للطالب الذي يظهر التزامًا واضحًا بمواعيد الحصص والمتابعة.",
-        d_en: "Awarded for clear punctuality and steady follow-up.",
-      },
-      {
-        ic: "📚",
-        t_ar: "متابع للواجبات",
-        t_en: "Homework Tracker",
-        d_ar: `تُمنح لإتمام ${hwDone}/${hwTotal || 0} من الواجبات المطلوبة خلال الفترة.`,
-        d_en: `Awarded for completing ${hwDone}/${hwTotal || 0} homework tasks during the period.`,
-      },
-      {
-        ic: "⚡",
-        t_ar: "وتيرة تعلم جيدة",
-        t_en: "Fast Learner",
-        d_ar: `تُمنح للطالب الذي يحقق وتيرة تعلم مناسبة. الوتيرة الحالية ${metricsLike.learningPaceText || "-"} حصة/درس.`,
-        d_en: `Awarded for maintaining an efficient learning pace of ${metricsLike.learningPaceText || "-"} classes per lesson.`,
-      },
-    ]);
-  }
-
   function buildMetrics(payload) {
     const feedbackItems = Array.isArray(payload.feedbackItems) ? payload.feedbackItems : [];
     const sessions = Array.isArray(payload.sessions) ? payload.sessions : [];
@@ -677,76 +501,45 @@
     const improvements = splitText(latest.improvement_areas, "الاستمرار في التدريب العملي وتسليم الواجبات في موعدها.");
     const explained = splitText(latest.explained, "تمت متابعة مفاهيم الدرس والتطبيق العملي عليها.");
 
-    const draft = normalizeReportDraft(payload.reportDraft || null);
-    const draftFields = draft?.fields || {};
-    const baseMetrics = {
+    return {
+      studentName: payload.studentName || payload.student?.name || latest.student_name || "اسم الطالب",
+      course,
+      level: payload.level || DEFAULT_LEVEL,
+      date: latestDate,
+      dateText: formatDate(latestDate),
+      monthText: getArabicMonth(latestDate),
+      instructor: payload.instructorName || INSTRUCTOR_AR,
+      sessionNo,
+      duration: payload.duration || DEFAULT_DURATION,
+      skills,
+      avg,
+      avgText: avg ? round1(avg) : "-",
+      grade: gradeFromScore(avg || 0),
+      rating: ratingLabel(avg),
+      rank: rankLabel(avg),
+      stars: starString(avg),
+      totalFeedback,
+      sessionCount: totalFeedback || sessions.length || 0,
+      attendancePct,
+      present,
+      absent,
+      attendanceTotal,
       homeworkDone,
       homeworkTotal,
-      attendancePct,
+      homeworkPct,
+      learningPace,
       learningPaceText: learningPace ? learningPace.toFixed(2) : "-",
-    };
-    const finalSkills = draftSkillItems(draft, skills);
-    const finalAvg = finalSkills.length ? average(finalSkills.map(skill => skill.score), 0) : avg;
-    const finalLessons = draftLessonItems(draft, lessons, finalAvg);
-    const finalSessions = draftSessionScores(draft, chartScores);
-    const finalBadges = normalizeBadgeItems(draft?.badges?.length ? draft.badges : defaultBadges(baseMetrics));
-    const finalModules = draft?.modules?.length ? draft.modules : defaultModules(course, courseProgress);
-    const fieldsPresent = asNumber(draftFields.present, present);
-    const fieldsAbsent = asNumber(draftFields.absent, absent);
-    const fieldsTotal = asNumber(draftFields.classesTotal, attendanceTotal || fieldsPresent + fieldsAbsent);
-    const fieldsAttendance = asNumber(draftFields.attendance, attendancePct);
-    const fieldsHwDone = asNumber(draftFields.hwDone, homeworkDone);
-    const fieldsHwTotal = asNumber(draftFields.hwTotal, homeworkTotal);
-    const fieldsPunctJoin = asNumber(draftFields.punctJoin, average(feedbackItems.map(item => item.commitment_score), finalAvg || 0));
-    const fieldsPunctSubmit = asNumber(draftFields.punctSubmit, fieldsHwTotal ? (fieldsHwDone / fieldsHwTotal) * 5 : homeworkPct / 20);
-    const finalCourseProgress = clamp(asNumber(finalModules[0]?.pct, courseProgress), 0, 100);
-
-    return {
-      studentName: draftFields.student || payload.studentName || payload.student?.name || latest.student_name || "اسم الطالب",
-      course: draftFields.course || course,
-      level: draftFields.level || payload.level || DEFAULT_LEVEL,
-      date: draftFields.date || latestDate,
-      dateText: formatDate(draftFields.date || latestDate),
-      issueDate: draftFields.issueDate || new Date().toISOString().slice(0, 10),
-      monthText: draftFields.period || getArabicMonth(latestDate),
-      instructor: draftFields.teacher || payload.instructorName || INSTRUCTOR_AR,
-      sessionNo: draftFields.sessionNo || sessionNo,
-      duration: normalizeDuration(draftFields.duration || payload.duration || DEFAULT_DURATION),
-      skills: finalSkills,
-      avg: finalAvg,
-      avgText: finalAvg ? round1(finalAvg) : "-",
-      grade: draftFields.finalGrade || gradeFromScore(finalAvg || 0),
-      rating: draftFields.rating || ratingLabel(finalAvg),
-      rank: draftFields.topPct !== undefined && draftFields.topPct !== "" ? `أفضل ${numericText(draftFields.topPct, "0")}٪` : rankLabel(finalAvg),
-      stars: starString(finalAvg),
-      totalFeedback,
-      sessionCount: asNumber(draftFields.classesDone, totalFeedback || sessions.length || 0),
-      attendancePct: fieldsAttendance,
-      present: fieldsPresent,
-      absent: fieldsAbsent,
-      attendanceTotal: fieldsTotal,
-      homeworkDone: fieldsHwDone,
-      homeworkTotal: fieldsHwTotal,
-      homeworkPct: fieldsHwTotal ? Math.round((fieldsHwDone / fieldsHwTotal) * 100) : asNumber(draftFields.homeworkPct, homeworkPct),
-      learningPace: asNumber(draftFields.pace, learningPace),
-      learningPaceText: numericText(draftFields.pace, learningPace ? learningPace.toFixed(2) : "-"),
-      courseProgress: finalCourseProgress,
-      lessons: finalLessons,
-      chartScores: finalSessions,
-      strengths: splitText(draftFields.strengths, latest.strengths || "مستوى الطالب جيد، ويظهر تفاعلًا واضحًا داخل الحصة."),
-      improvements: splitText(draftFields.improve, latest.improvement_areas || "الاستمرار في التدريب العملي وتسليم الواجبات في موعدها."),
-      explained: splitText(latest.explained, "تمت متابعة مفاهيم الدرس والتطبيق العملي عليها."),
-      teacherNote: draftFields.teacherNote || "",
-      nextStep: draftFields.homework || "",
-      commitmentAvg: fieldsPunctJoin,
-      participationAvg: average(feedbackItems.map(item => item.participation_score), finalAvg || 0),
-      submitAvg: fieldsPunctSubmit,
+      courseProgress,
+      lessons,
+      chartScores,
+      strengths,
+      improvements,
+      explained,
+      commitmentAvg: average(feedbackItems.map(item => item.commitment_score), avg || 0),
+      participationAvg: average(feedbackItems.map(item => item.participation_score), avg || 0),
       selectedRange: payload.selectedRange || null,
       rawFeedbackItems: feedbackItems,
       rawSessions: sessions,
-      badges: finalBadges,
-      modules: finalModules,
-      reportDraft: draft,
     };
   }
 
@@ -765,15 +558,15 @@
 
   function renderLessons(metrics) {
     return metrics.lessons.slice(0, 8).map((item, index) => {
-      const score = lessonAverage(item) || gradeScore(item.grade) || metrics.avg;
+      const score = lessonAverage(item) || Number(item.v) || metrics.avg;
       const grade = item.grade || gradeFromScore(score);
-      const quiz = item.quiz || "—";
+      const quiz = item.quiz || "⭐";
       return `
         <tr>
           <td>${index + 1}</td>
           <td>${escapeHtml(item.lesson_title || item.ar || `جلسة ${index + 1}`)}</td>
           <td><span class="edubia-grade-pill">${escapeHtml(grade)}</span></td>
-          <td><span class="edubia-star">${escapeHtml(quiz)}</span></td>
+          <td><span class="edubia-star">${escapeHtml(quiz || "—")}</span></td>
         </tr>`;
     }).join("");
   }
@@ -822,41 +615,68 @@
     return `<ul class="edubia-bullets">${items.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
   }
 
-  function renderModules(modules) {
-    const items = Array.isArray(modules) ? modules : [];
-    const current = items.filter(module => String(module.status || "").toLowerCase() === "ongoing");
-    const upcoming = items.filter(module => String(module.status || "").toLowerCase() !== "ongoing");
-    const renderModule = (module, isCurrent = false) => `
-      <div class="edubia-progress-box">
-        <div class="edubia-course-head">
-          <strong>${escapeHtml(module.ar || module.en || "Module")}</strong>
-          <span class="edubia-progress-pill" style="${isCurrent ? "" : "background:#e6edf7;color:#08265a;"}">${isCurrent ? `جارية ${escapeHtml(clamp(asNumber(module.pct, 0), 0, 100))}٪` : "قريبًا"}</span>
-        </div>
-        ${isCurrent ? `<div class="edubia-progress-bar"><span style="width:${clamp(asNumber(module.pct, 0), 0, 100)}%"></span></div>` : ""}
-        <p>${escapeHtml(module.d_ar || module.d_en || "سيتم إضافة تفاصيل هذا المستوى قريبًا.")}</p>
-      </div>`;
+  function edubiaLogoImage() {
+    return `<img class="edubia-logo-mark" src="${EDUBIA_LOGO_DATA_URL}" alt="Edubia logo" />`;
+  }
+
+  function renderModules(metrics) {
+    const modules = Array.isArray(metrics.modules) && metrics.modules.length
+      ? metrics.modules
+      : defaultModules(metrics.course, metrics.courseProgress);
+    const current = modules.find(item => String(item.status || "").toLowerCase() === "ongoing") || modules[0];
+    const upcoming = modules.filter(item => item !== current).slice(0, 6);
     return `
       <h3 style="margin:0 0 14px; color:#08265a; font-size:17px;">التقدم في الدراسة الحالية</h3>
-      ${(current.length ? current : items.slice(0, 1)).map(module => renderModule(module, true)).join("")}
+      <div class="edubia-progress-box">
+        <div class="edubia-course-head"><strong>${escapeHtml(current?.ar || metrics.course)}</strong><span class="edubia-progress-pill">جارية ${escapeHtml(current?.pct ?? metrics.courseProgress)}٪</span></div>
+        <div class="edubia-progress-bar"><span style="width:${clamp(Number(current?.pct ?? metrics.courseProgress), 0, 100)}%"></span></div>
+        <p>${escapeHtml(current?.d_ar || "يتم متابعة تقدم الطالب في الدراسة الحالية من خلال التطبيق العملي والواجبات والتفاعل داخل الحصة.")}</p>
+      </div>
       <h3 style="margin:10px 0 14px; color:#8a94a8; font-size:16px;">المستويات القادمة (قريبًا)</h3>
-      ${(upcoming.length ? upcoming : items.slice(1)).slice(0, 6).map(module => renderModule(module, false)).join("")}
+      ${upcoming.map(module => `<div class="edubia-progress-box" style="margin-top:8px;"><div class="edubia-course-head"><strong>${escapeHtml(module.ar || module.en || "وحدة قادمة")}</strong><span class="edubia-progress-pill" style="background:#e6edf7;color:#08265a;">قريبًا</span></div><p>${escapeHtml(module.d_ar || "سيتم إضافة تفاصيل هذه الوحدة لاحقًا.")}</p></div>`).join("")}
     `;
   }
 
   function reportHtml(metrics) {
     const stripText = `أداء ${metrics.studentName} يضعه ضمن ${metrics.rank} من الطلاب في مساق ${metrics.course} هذا الشهر.`;
-    const teacherNote = metrics.teacherNote || [
+    const teacherNote = [
       metrics.explained.length ? `تم خلال آخر متابعة: ${metrics.explained.join("، ")}.` : "",
       metrics.strengths.length ? `نقاط مميزة: ${metrics.strengths.join("، ")}.` : "",
       metrics.improvements.length ? `نقطة التركيز القادمة: ${metrics.improvements[0]}.` : "",
     ].filter(Boolean).join(" ");
 
-    const nextStep = metrics.nextStep || (metrics.improvements.length
+    const nextStep = metrics.improvements.length
       ? `الاستمرار في تطبيق ما تم شرحه داخل ${metrics.course} مع التركيز على ${metrics.improvements.join("، ")}.`
-      : `الاستمرار في تعلم مفاهيم جديدة في ${metrics.course} وتطبيقها في مشروعات أكثر تحديًا.`);
+      : `الاستمرار في تعلم مفاهيم جديدة في ${metrics.course} وتطبيقها في مشروعات أكثر تحديًا.`;
 
-    const badges = normalizeBadgeItems(metrics.badges?.length ? metrics.badges : defaultBadges(metrics));
-    const modules = Array.isArray(metrics.modules) && metrics.modules.length ? metrics.modules : defaultModules(metrics.course, metrics.courseProgress);
+    const badges = Array.isArray(metrics.badges) && metrics.badges.length
+      ? metrics.badges.map(badge => ({
+          icon: badge.icon || badge.ic || "🏅",
+          title: badge.title || badge.t_ar || "شارة",
+          text: badge.text || badge.d_ar || "تمت إضافة هذه الشارة للتقرير."
+        }))
+      : [
+          {
+            icon: "⏱️",
+            title: "منضبط بالوقت",
+            text: metrics.commitmentAvg >= 4.5 ? "تُمنح لانضباط الطالب في بداية الجلسات والالتزام بالمواعيد." : "يحتاج إلى متابعة الالتزام بالمواعيد بشكل أكبر."
+          },
+          {
+            icon: "⚡",
+            title: "متعلّم سريع",
+            text: metrics.learningPace && metrics.learningPace <= 1 ? `وتيرة ${metrics.learningPaceText} حصة/درس — استيعاب فعّال.` : "يتقدم بوتيرة مناسبة مع احتياج بسيط لمزيد من التدريب."
+          },
+          {
+            icon: "✅",
+            title: "ملتزم بالواجبات",
+            text: `${metrics.homeworkDone} من ${metrics.homeworkTotal || 0} واجبات تم تسجيلها كمنجزة.`
+          },
+          {
+            icon: "💬",
+            title: "متفاعل",
+            text: metrics.participationAvg >= 4.5 ? "مشاركة واضحة وتفاعل جيد داخل الحصة." : "نستهدف زيادة المشاركة خلال التطبيقات العملية."
+          }
+        ].slice(0, 3);
 
     return `
       <div class="edubia-report-page">
@@ -952,16 +772,11 @@
             <div class="edubia-note orange"><h3>📌 الخطوة الجاية</h3><p>${escapeHtml(limitText(nextStep, 210))}</p></div>
           </section>
 
-        </div>
-      </div>
-
-      <div class="edubia-report-page edubia-page-plain">
-        <div class="edubia-report-content edubia-page-body">
-          <section class="edubia-card" style="margin-top:0;">
+          <section class="edubia-card" style="margin-top:24px;">
             <div class="edubia-title-right"><div class="edubia-section-title">الشارات المكتسبة</div></div>
             <div class="edubia-badge-grid">
               ${badges.map(badge => `
-                <div class="edubia-badge"><div class="edubia-badge-icon">${escapeHtml(badge.ic)}</div><div><strong>${escapeHtml(badge.t_ar)}</strong><span>${escapeHtml(badge.d_ar)}</span></div></div>
+                <div class="edubia-badge"><div class="edubia-badge-icon">${badge.icon}</div><div><strong>${escapeHtml(badge.title)}</strong><span>${escapeHtml(badge.text)}</span></div></div>
               `).join("")}
             </div>
           </section>
@@ -970,16 +785,12 @@
 
       <div class="edubia-report-page edubia-page-plain edubia-next-page">
         <div class="edubia-report-content edubia-page-body">
-          <section class="edubia-card" style="margin-top:0;">
+          <section class="edubia-card">
             <div class="edubia-title-right"><div class="edubia-section-title">ماذا بعد؟</div></div>
-            ${renderModules(modules)}
+            ${renderModules(metrics)}
           </section>
-        </div>
-      </div>
 
-      <div class="edubia-report-page edubia-page-plain edubia-next-page">
-        <div class="edubia-report-content edubia-page-body">
-          <section class="edubia-card edubia-advice-card" style="margin-top:0;">
+          <section class="edubia-card edubia-advice-card">
             <div class="edubia-title-right"><div class="edubia-section-title">3 نصائح لولي الأمر</div></div>
             <div class="edubia-tips">
               <div class="edubia-tip"><div class="edubia-tip-icon">📆</div><strong>ثبّت الروتين</strong><p>احرص على الحضور المنتظم والالتزام بالمواعيد ضمن جدول دراسة ثابت.</p></div>
@@ -1011,107 +822,216 @@
     return String(name).replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, " ").trim();
   }
 
+  function englishSkillName(ar) {
+    const map = {
+      "استيعاب المفاهيم": "Concept Understanding",
+      "حل المشكلات (المنطق)": "Problem Solving (Logic)",
+      "كتابة الكود وتطبيقه": "Coding & Implementation",
+      "إنجاز التمارين والمشاريع": "Exercises & Projects",
+      "التفاعل والمشاركة": "Engagement & Participation",
+    };
+    return map[ar] || ar || "Skill";
+  }
+
+  function gradeToScore(grade) {
+    const value = String(grade || "").replace(/\s+/g, "").toUpperCase();
+    const map = { "+A": 4.8, "A+": 4.8, "A": 4.5, "-A": 4.1, "A-": 4.1, "+B": 3.9, "B+": 3.9, "B": 3.55, "-B": 3.25, "B-": 3.25, "+C": 3.1, "C+": 3.1, "C": 2.75, "-C": 2.25, "C-": 2.25, "F": 1.2 };
+    return map[value] || 0;
+  }
+
+  function defaultBadgesFromMetrics(metrics) {
+    return [
+      {
+        ic: "⏱️",
+        t_ar: "منضبط بالوقت",
+        t_en: "Timely Titan",
+        d_ar: metrics.commitmentAvg >= 4.5
+          ? "تُمنح لتقييم انضباط 4/5 أو أعلى. انضباط ممتاز وحضور في المواعيد دون تفويت فرص التعلم."
+          : "تُمنح عند تحسن الالتزام بالمواعيد وتقليل التأخير في بداية الجلسات.",
+        d_en: "Awarded for strong punctuality and steady attendance.",
+      },
+      {
+        ic: "⚡",
+        t_ar: "متعلّم سريع",
+        t_en: "Fast Learner",
+        d_ar: `تُمنح لإتمام الدروس بوتيرة جيدة. الوتيرة الحالية ${metrics.learningPaceText || "-"} حصة/درس.`,
+        d_en: "Awarded for efficient learning pace.",
+      },
+      {
+        ic: "✅",
+        t_ar: "متابع للواجبات",
+        t_en: "Homework Tracker",
+        d_ar: `تُمنح لإتمام ${metrics.homeworkDone}/${metrics.homeworkTotal || 0} من الواجبات المطلوبة خلال الفترة.`,
+        d_en: "Awarded for completing the required homework.",
+      },
+    ].filter(Boolean).slice(0, 3);
+  }
+
+  function defaultModules(course, progress) {
+    return [
+      {
+        ar: course || "Python",
+        en: course || "Current Course",
+        status: "ongoing",
+        pct: Number(progress || 55),
+        d_ar: "يتعلم الطالب أساسيات المساق الحالي من خلال الشرح والتطبيق العملي، مع متابعة مستوى الفهم والواجبات والتفاعل داخل الحصة.",
+        d_en: "Current course progress with practical learning and follow-up.",
+      },
+      { ar: "Web Development", en: "Web Development", status: "soon", pct: 0, d_ar: "يتعلم الطلاب تصميم وتطوير مواقع الويب باستخدام HTML وCSS وJavaScript وإنشاء صفحات ومواقع تفاعلية.", d_en: "" },
+      { ar: "App Development", en: "App Development", status: "soon", pct: 0, d_ar: "كورس لتصميم وتطوير تطبيقات الهواتف الذكية، حيث يتعلم الطلاب كيفية إنشاء تطبيقاتهم الخاصة وإضافة مميزات مختلفة لها.", d_en: "" },
+      { ar: "Game Development", en: "Game Development", status: "soon", pct: 0, d_ar: "يتعلم الطلاب كيفية تصميم وتطوير الألعاب، من إنشاء الشخصيات والمراحل إلى إضافة المؤثرات والقواعد البرمجية.", d_en: "" },
+      { ar: "Artificial Intelligence (AI)", en: "Artificial Intelligence (AI)", status: "soon", pct: 0, d_ar: "يتعرف الطلاب على أساسيات الذكاء الاصطناعي وتطبيقاته المختلفة، وكيفية تدريب النماذج وإنشاء مشاريع تعتمد على تقنيات AI الحديثة.", d_en: "" },
+    ];
+  }
+
   function buildReportData(payload) {
     const source = payload || {};
-    const metrics = buildMetrics(source);
-    const draft = normalizeReportDraft(source.reportDraft || null);
-    if (draft) {
-      return {
-        app: "edubia-report",
-        v: 2,
-        lang: draft.lang || "ar",
-        logoData: draft.logoData ?? null,
-        fields: { ...(draft.fields || {}) },
-        skills: (draft.skills || []).map(item => ({ ar: item.ar || "", en: item.en || "", v: asNumber(item.v, 0) })),
-        sessions: (draft.sessions || []).map(item => ({ ar: item.ar || "", en: item.en || "", v: asNumber(item.v, 0) })),
-        lessons: (draft.lessons || []).map(item => ({ ar: item.ar || "", en: item.en || "", grade: item.grade || "", quiz: item.quiz || "—" })),
-        badges: normalizeBadgeItems(draft.badges || []),
-        modules: (draft.modules || []).map(item => ({
-          ar: item.ar || "",
-          en: item.en || "",
-          status: item.status || "soon",
-          pct: asNumber(item.pct, 0),
-          d_ar: item.d_ar || "",
-          d_en: item.d_en || "",
-        })),
-      };
+    if (source.app === "edubia-report" && source.fields) {
+      return JSON.parse(JSON.stringify(source));
     }
 
-    const skillEn = [
-      "Concept Understanding",
-      "Problem Solving (Logic)",
-      "Coding & Implementation",
-      "Exercises & Projects",
-      "Engagement & Participation",
-    ];
-    const lessonRows = metrics.lessons.slice(0, 8);
-    const sessionsRows = metrics.chartScores.length ? metrics.chartScores : lessonRows.map(item => lessonAverage(item) || metrics.avg || 0);
-    const cleanDuration = String(metrics.duration || DEFAULT_DURATION).replace(/\s*دقيقة\s*/g, "").trim() || "60";
+    const metrics = buildMetrics(source);
+    const fields = {
+      student: metrics.studentName,
+      course: metrics.course,
+      level: metrics.level,
+      teacher: metrics.instructor,
+      period: metrics.monthText,
+      date: formatDate(metrics.date),
+      issueDate: formatDate(new Date().toISOString().slice(0, 10)),
+      sessionNo: String(metrics.sessionNo || ""),
+      duration: String(metrics.duration || "").replace(/\s*دقيقة\s*$/, ""),
+      topPct: String(metrics.rank || "0").replace(/[^0-9.]/g, "") || "0",
+      pace: metrics.learningPaceText || "0",
+      attendance: String(metrics.attendancePct || 0),
+      hwDone: String(metrics.homeworkDone || 0),
+      hwTotal: String(metrics.homeworkTotal || 0),
+      present: String(metrics.present || 0),
+      absent: String(metrics.absent || 0),
+      classesDone: String(metrics.attendanceTotal || metrics.sessionCount || 0),
+      classesTotal: String(metrics.attendanceTotal || metrics.sessionCount || 0),
+      punctJoin: String(round1(metrics.commitmentAvg || 0)),
+      punctSubmit: String(round1(metrics.homeworkPct ? metrics.homeworkPct / 20 : 0)),
+      finalGrade: metrics.grade,
+      teacherNote: metrics.explained?.length ? metrics.explained.join(". ") : "تم تسجيل متابعة الطالب وسيتم تحديث الملاحظات مع كل جلسة.",
+      homework: metrics.improvements?.length ? `التركيز خلال الفترة القادمة على ${metrics.improvements.join("، ")}.` : "الاستمرار في حل الواجبات والتطبيق العملي بشكل منتظم.",
+      strengths: metrics.strengths?.join(". ") || "يظهر الطالب مستوى جيدًا في المتابعة والتطبيق.",
+      improve: metrics.improvements?.join(". ") || "يحتاج إلى استمرار التدريب والمراجعة الدورية.",
+    };
+
+    const skills = metrics.skills.map(skill => ({
+      ar: skill.label,
+      en: englishSkillName(skill.label),
+      v: Number(round1(skill.score || 0)),
+    }));
+
+    const sessions = (metrics.chartScores.length ? metrics.chartScores : [metrics.avg || 0]).map((score, index) => ({
+      ar: `جلسة ${index + 1}`,
+      en: `S${index + 1}`,
+      v: Number(round1(score || 0)),
+    }));
+
+    const lessons = metrics.lessons.slice(0, 12).map((item, index) => {
+      const score = lessonAverage(item) || metrics.avg || 0;
+      return {
+        ar: item.lesson_title || `جلسة ${index + 1}`,
+        en: item.lesson_title || `Lesson ${index + 1}`,
+        grade: item.grade || gradeFromScore(score),
+        quiz: item.quiz || "⭐",
+      };
+    });
 
     return {
       app: "edubia-report",
       v: 2,
       lang: "ar",
       logoData: null,
-      fields: {
-        student: metrics.studentName,
-        course: metrics.course,
-        level: metrics.level,
-        teacher: metrics.instructor,
-        period: metrics.monthText,
-        date: metrics.dateText,
-        issueDate: formatDate(metrics.issueDate || new Date().toISOString().slice(0, 10)),
-        sessionNo: String(metrics.sessionNo || ""),
-        duration: cleanDuration,
-        topPct: String(metrics.rank || "0").replace(/[^0-9.]/g, "") || "0",
-        pace: metrics.learningPaceText,
-        attendance: String(metrics.attendancePct),
-        hwDone: String(metrics.homeworkDone),
-        hwTotal: String(metrics.homeworkTotal || 0),
-        present: String(metrics.present),
-        absent: String(metrics.absent),
-        classesDone: String(metrics.sessionCount),
-        classesTotal: String(metrics.attendanceTotal || metrics.sessionCount),
-        punctJoin: round1(metrics.commitmentAvg || 0),
-        punctSubmit: round1(metrics.submitAvg || 0),
-        finalGrade: metrics.grade,
-        teacherNote: metrics.teacherNote || [
-          metrics.explained.length ? `تم خلال آخر متابعة: ${metrics.explained.join("، ")}.` : "",
-          metrics.strengths.length ? `نقاط مميزة: ${metrics.strengths.join("، ")}.` : "",
-          metrics.improvements.length ? `نقطة التركيز القادمة: ${metrics.improvements[0]}.` : "",
-        ].filter(Boolean).join(" "),
-        homework: metrics.nextStep || (metrics.improvements.length ? `الاستمرار في التدريب على ${metrics.improvements.join("، ")}.` : "الاستمرار في حل الواجبات والتطبيق العملي بانتظام."),
-        strengths: metrics.strengths.join("\n"),
-        improve: metrics.improvements.join("\n"),
-      },
-      skills: metrics.skills.map((skill, index) => ({
-        ar: skill.label,
-        en: skill.en || skillEn[index] || skill.label,
-        v: Number(round1(skill.score || 0)),
-      })),
-      sessions: sessionsRows.map((score, index) => ({
-        ar: `جلسة ${index + 1}`,
-        en: `S${index + 1}`,
-        v: Number(round1(score || 0)),
-      })),
-      lessons: lessonRows.map((item, index) => {
-        const score = lessonAverage(item) || gradeScore(item.grade) || metrics.avg || 0;
-        return {
-          ar: item.lesson_title || item.ar || `جلسة ${index + 1}`,
-          en: item.lesson_title_en || item.en || item.lesson_title || `S${index + 1}`,
-          grade: item.grade || gradeFromScore(score),
-          quiz: item.quiz || "—",
-        };
-      }),
-      badges: normalizeBadgeItems(metrics.badges),
-      modules: metrics.modules.map(item => ({
-        ar: item.ar || "",
-        en: item.en || "",
-        status: item.status || "soon",
-        pct: asNumber(item.pct, 0),
-        d_ar: item.d_ar || "",
-        d_en: item.d_en || "",
-      })),
+      fields,
+      skills,
+      sessions,
+      lessons,
+      badges: defaultBadgesFromMetrics(metrics),
+      modules: defaultModules(metrics.course, metrics.courseProgress),
+    };
+  }
+
+  function modelToMetrics(data) {
+    const model = buildReportData(data || {});
+    const fields = model.fields || {};
+    const skills = Array.isArray(model.skills) ? model.skills.map(item => ({
+      label: item.ar || item.label || "مهارة",
+      field: item.en || "skill",
+      score: clamp(Number(item.v ?? item.score ?? 0), 0, 5),
+    })) : [];
+
+    const avg = average(skills.map(skill => skill.score), 0);
+    const sessions = Array.isArray(model.sessions) ? model.sessions : [];
+    const lessons = Array.isArray(model.lessons) ? model.lessons.map((item, index) => {
+      const score = Number(item.v ?? 0) || gradeToScore(item.grade) || avg;
+      return {
+        lesson_title: item.ar || item.en || `جلسة ${index + 1}`,
+        grade: item.grade || gradeFromScore(score),
+        quiz: item.quiz || "—",
+        understanding_score: score,
+        problem_solving_score: score,
+        practical_score: score,
+        exercise_score: score,
+        participation_score: score,
+      };
+    }) : [];
+
+    const sessionScores = sessions.map(item => Number(item.v ?? 0)).filter(v => !Number.isNaN(v));
+    const dateValue = String(fields.date || new Date().toISOString().slice(0, 10)).replace(/\//g, "-");
+    const present = Number(fields.present ?? 0) || 0;
+    const absent = Number(fields.absent ?? 0) || 0;
+    const attendanceTotal = Number(fields.classesTotal ?? fields.classesDone ?? (present + absent)) || present + absent || sessions.length || lessons.length || 0;
+    const attendancePct = Number(fields.attendance ?? 0) || (attendanceTotal ? Math.round((present / attendanceTotal) * 100) : 0);
+    const homeworkDone = Number(fields.hwDone ?? 0) || 0;
+    const homeworkTotal = Number(fields.hwTotal ?? 0) || 0;
+    const homeworkPct = homeworkTotal ? Math.round((homeworkDone / homeworkTotal) * 100) : 0;
+    const learningPace = Number(fields.pace ?? 0) || 0;
+
+    return {
+      studentName: fields.student || "اسم الطالب",
+      course: normalizeCourseName(fields.course || "General"),
+      level: fields.level || DEFAULT_LEVEL,
+      date: dateValue,
+      dateText: formatDate(dateValue),
+      monthText: fields.period || getArabicMonth(dateValue),
+      instructor: fields.teacher || INSTRUCTOR_AR,
+      sessionNo: fields.sessionNo || "-",
+      duration: String(fields.duration || DEFAULT_DURATION).includes("دقيقة") ? String(fields.duration) : `${fields.duration || 60} دقيقة`,
+      skills,
+      avg,
+      avgText: avg ? round1(avg) : "-",
+      grade: fields.finalGrade || gradeFromScore(avg || 0),
+      rating: ratingLabel(avg),
+      rank: fields.topPct ? `أفضل ${fields.topPct}٪` : rankLabel(avg),
+      stars: starString(avg),
+      totalFeedback: sessions.length || lessons.length,
+      sessionCount: Number(fields.classesDone ?? sessions.length ?? lessons.length) || sessions.length || lessons.length || 0,
+      attendancePct,
+      present,
+      absent,
+      attendanceTotal,
+      homeworkDone,
+      homeworkTotal,
+      homeworkPct,
+      learningPace,
+      learningPaceText: learningPace ? learningPace.toFixed(2) : "-",
+      courseProgress: Number(model.modules?.[0]?.pct ?? 55) || 55,
+      lessons: lessons.length ? lessons : [{ lesson_title: "لم يتم تسجيل دروس بعد", grade: fields.finalGrade || gradeFromScore(avg || 0), quiz: "—", understanding_score: avg, problem_solving_score: avg, practical_score: avg, exercise_score: avg, participation_score: avg }],
+      chartScores: sessionScores.length ? sessionScores : lessons.map(lessonAverage),
+      strengths: splitText(fields.strengths, "مستوى الطالب جيد، ويظهر تفاعلًا واضحًا داخل الحصة."),
+      improvements: splitText(fields.improve, "الاستمرار في التدريب العملي وتسليم الواجبات في موعدها."),
+      explained: splitText(fields.teacherNote, "تمت متابعة مفاهيم الدرس والتطبيق العملي عليها."),
+      commitmentAvg: Number(fields.punctJoin ?? avg ?? 0) || 0,
+      participationAvg: average(skills.filter(skill => /تفاعل|مشاركة/.test(skill.label)).map(skill => skill.score), avg || 0),
+      selectedRange: null,
+      rawFeedbackItems: [],
+      rawSessions: sessions,
+      badges: (model.badges || []).map(b => ({ icon: b.ic, title: b.t_ar, text: b.d_ar })),
+      modules: model.modules || [],
     };
   }
 
@@ -1121,358 +1041,18 @@
     const link = document.createElement("a");
     link.href = url;
     link.download = fileName;
+    link.style.display = "none";
     document.body.appendChild(link);
     link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-  }
-
-  const COMMON_BADGE_EMOJIS = ["⏱️", "⚡", "✅", "📚", "🏆", "⭐", "🎯", "💪", "🧠", "🚀", "🌱", "🤝", "💬", "🔥", "🎓", "📅", "📝", "💡", "👨‍💻", "👩‍💻", "🧩", "🎨", "📈", "🥇", "🥈", "🥉", "💯", "✨", "🌟", "👏"];
-
-  function addReportEditorStyleOnce() {
-    if (document.getElementById("edubia-report-editor-style")) return;
-    const style = document.createElement("style");
-    style.id = "edubia-report-editor-style";
-    style.textContent = `
-      .report-editor-overlay {
-        position: fixed;
-        inset: 0;
-        z-index: 999999;
-        background: #071226;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 390px;
-        gap: 18px;
-        padding: 18px;
-        direction: rtl;
-        font-family: "Cairo", "Inter", sans-serif;
-      }
-      .report-editor-preview {
-        background: #f5f7fb;
-        border: 1px solid rgba(255,255,255,.08);
-        border-radius: 18px;
-        overflow: auto;
-        padding: 22px;
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-      }
-      .report-editor-preview .edubia-report-preview-root {
-        position: static !important;
-        left: auto !important;
-        top: auto !important;
-        z-index: auto !important;
-        pointer-events: auto !important;
-        width: 794px !important;
-        transform: scale(.86);
-        transform-origin: top center;
-        margin-bottom: -140px;
-      }
-      .report-editor-panel {
-        overflow: auto;
-        border: 1px solid rgba(255,255,255,.13);
-        border-radius: 18px;
-        background: #111d38;
-        color: #eef5ff;
-        padding: 16px;
-        box-shadow: 0 20px 50px rgba(0,0,0,.3);
-      }
-      .report-editor-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:14px; }
-      .report-editor-head h3 { margin:0; color:white; font-size:22px; }
-      .report-editor-head p { margin:5px 0 0; color:#94a3b8; font-size:13px; line-height:1.55; }
-      .report-editor-close { border:0; background:#293858; color:#fff; width:36px; height:36px; border-radius:10px; font-weight:900; cursor:pointer; }
-      .report-editor-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
-      .report-editor-actions button, .report-editor-add-btn {
-        border:0;
-        border-radius:12px;
-        padding:11px 12px;
-        font-weight:900;
-        cursor:pointer;
-      }
-      .report-editor-actions .pdf { color:white; background:linear-gradient(135deg,#ff9f26,#f27c0b); }
-      .report-editor-actions .json { color:#08265a; background:linear-gradient(135deg,#dbeafe,#ffffff); }
-      .report-editor-section { border:1px solid rgba(255,255,255,.12); border-radius:15px; padding:13px; margin-bottom:13px; background:rgba(255,255,255,.035); }
-      .report-editor-section h4 { margin:0 0 10px; color:white; font-size:16px; display:flex; gap:8px; align-items:center; }
-      .report-editor-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-      .report-editor-field { display:grid; gap:5px; min-width:0; }
-      .report-editor-field.full { grid-column:1/-1; }
-      .report-editor-field span { color:#cbd5e1; font-size:12px; font-weight:800; }
-      .report-editor-field input, .report-editor-field textarea, .report-editor-field select {
-        width:100%;
-        border:1px solid rgba(255,255,255,.14);
-        background:#1b2948;
-        color:#fff;
-        border-radius:10px;
-        padding:9px 10px;
-        outline:none;
-        font:inherit;
-      }
-      .report-editor-field textarea { min-height:76px; resize:vertical; line-height:1.55; }
-      .report-editor-row { border:1px solid rgba(255,255,255,.1); border-radius:13px; padding:10px; margin-bottom:10px; background:rgba(255,255,255,.035); }
-      .report-editor-row-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; color:#ffbd73; font-weight:900; }
-      .report-editor-remove { border:0; background:#4b2231; color:#fecdd3; border-radius:9px; padding:5px 8px; cursor:pointer; font-weight:900; }
-      .report-editor-add-btn { width:100%; background:transparent; color:#ffbd73; border:1px dashed #f27c0b; margin-top:4px; }
-      .report-editor-note { color:#94a3b8; font-size:12px; line-height:1.55; margin:8px 0 0; }
-      @media (max-width: 1050px) {
-        .report-editor-overlay { grid-template-columns:1fr; }
-        .report-editor-panel { max-height:58vh; order:1; }
-        .report-editor-preview { order:2; }
-        .report-editor-preview .edubia-report-preview-root { transform: scale(.72); }
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  function cloneReportData(data) {
-    return JSON.parse(JSON.stringify(data || {}));
-  }
-
-  function setByPath(object, path, value) {
-    const parts = String(path).split(".");
-    let cursor = object;
-    for (let i = 0; i < parts.length - 1; i++) {
-      const key = parts[i];
-      if (cursor[key] === undefined) cursor[key] = /^\d+$/.test(parts[i + 1]) ? [] : {};
-      cursor = cursor[key];
-    }
-    const last = parts[parts.length - 1];
-    cursor[last] = value;
-  }
-
-  function editorInput(path, label, value, type = "text", extra = "") {
-    return `<label class="report-editor-field ${extra}"><span>${escapeHtml(label)}</span><input data-edit-path="${escapeHtml(path)}" type="${type}" value="${escapeHtml(value ?? "")}" /></label>`;
-  }
-
-  function editorTextarea(path, label, value, extra = "full") {
-    return `<label class="report-editor-field ${extra}"><span>${escapeHtml(label)}</span><textarea data-edit-path="${escapeHtml(path)}">${escapeHtml(value ?? "")}</textarea></label>`;
-  }
-
-  function editorSelect(path, label, value, options, extra = "") {
-    return `<label class="report-editor-field ${extra}"><span>${escapeHtml(label)}</span><select data-edit-path="${escapeHtml(path)}">${options.map(option => `<option value="${escapeHtml(option.value)}" ${String(option.value) === String(value) ? "selected" : ""}>${escapeHtml(option.label)}</option>`).join("")}</select></label>`;
-  }
-
-  function renderEditorPanel(data, preferredFormat) {
-    const f = data.fields || {};
-    const statusOptions = [{ value: "ongoing", label: "جارية" }, { value: "soon", label: "قريبًا" }];
-    return `
-      <datalist id="edubiaBadgeEmojiList">${COMMON_BADGE_EMOJIS.map(emoji => `<option value="${escapeHtml(emoji)}"></option>`).join("")}</datalist>
-      <div class="report-editor-head">
-        <div>
-          <h3>تعديل التقرير قبل التحميل</h3>
-          <p>عدّل البيانات هنا، وستتحدث المعاينة مباشرة. التحميل كـ PDF يستخدم نفس شكل تقرير Edubia، والـ JSON يستخدم نفس أساس ملف البيانات.</p>
-        </div>
-        <button class="report-editor-close" data-editor-close>×</button>
-      </div>
-      <div class="report-editor-actions">
-        <button class="pdf" data-editor-download="pdf">📄 حفظ PDF</button>
-        <button class="json" data-editor-download="json">🧾 حفظ JSON</button>
-      </div>
-      <section class="report-editor-section">
-        <h4>🧑‍🎓 بيانات الطالب والجلسة</h4>
-        <div class="report-editor-grid">
-          ${editorInput("fields.student", "اسم الطالب", f.student)}
-          ${editorInput("fields.course", "المساق", f.course)}
-          ${editorInput("fields.level", "المستوى", f.level)}
-          ${editorInput("fields.teacher", "المعلم", f.teacher)}
-          ${editorInput("fields.period", "الشهر / الفترة", f.period)}
-          ${editorInput("fields.date", "التاريخ", f.date)}
-          ${editorInput("fields.issueDate", "تاريخ الإصدار", f.issueDate)}
-          ${editorInput("fields.sessionNo", "رقم الجلسة", f.sessionNo)}
-          ${editorInput("fields.duration", "المدة بالدقائق", f.duration)}
-          ${editorInput("fields.finalGrade", "الدرجة النهائية", f.finalGrade)}
-        </div>
-      </section>
-      <section class="report-editor-section">
-        <h4>📊 الإحصائيات والحضور</h4>
-        <div class="report-editor-grid">
-          ${editorInput("fields.topPct", "ضمن أفضل (%)", f.topPct, "number")}
-          ${editorInput("fields.pace", "وتيرة التعلم", f.pace, "number")}
-          ${editorInput("fields.attendance", "نسبة الحضور (%)", f.attendance, "number")}
-          ${editorInput("fields.hwDone", "الواجبات المنجزة", f.hwDone, "number")}
-          ${editorInput("fields.hwTotal", "إجمالي الواجبات", f.hwTotal, "number")}
-          ${editorInput("fields.present", "عدد الحضور", f.present, "number")}
-          ${editorInput("fields.absent", "عدد الغياب", f.absent, "number")}
-          ${editorInput("fields.classesDone", "حصص منجزة", f.classesDone, "number")}
-          ${editorInput("fields.classesTotal", "إجمالي الحصص", f.classesTotal, "number")}
-          ${editorInput("fields.punctJoin", "الالتحاق بالوقت (0-5)", f.punctJoin, "number")}
-          ${editorInput("fields.punctSubmit", "التسليم بالوقت (0-5)", f.punctSubmit, "number")}
-        </div>
-      </section>
-      <section class="report-editor-section">
-        <h4>📝 نقاط القوة والتحسين والواجب</h4>
-        <div class="report-editor-grid">
-          ${editorTextarea("fields.strengths", "نقاط القوة", f.strengths)}
-          ${editorTextarea("fields.improve", "مجالات التحسين", f.improve)}
-          ${editorTextarea("fields.teacherNote", "ملاحظات المعلم", f.teacherNote)}
-          ${editorTextarea("fields.homework", "الخطوة الجاية / الواجب", f.homework)}
-        </div>
-      </section>
-      <section class="report-editor-section">
-        <h4>⭐ المهارات (0 - 5)</h4>
-        ${(data.skills || []).map((skill, index) => `
-          <div class="report-editor-row">
-            <div class="report-editor-row-head">مهارة ${index + 1}</div>
-            <div class="report-editor-grid">
-              ${editorInput(`skills.${index}.ar`, "العنوان عربي", skill.ar)}
-              ${editorInput(`skills.${index}.en`, "العنوان إنجليزي", skill.en)}
-              ${editorInput(`skills.${index}.v`, "التقييم", skill.v, "number", "full")}
-            </div>
-          </div>`).join("")}
-      </section>
-      <section class="report-editor-section">
-        <h4>📈 التقدم عبر الجلسات</h4>
-        ${(data.sessions || []).map((session, index) => `
-          <div class="report-editor-row">
-            <div class="report-editor-row-head">جلسة ${index + 1}</div>
-            <div class="report-editor-grid">
-              ${editorInput(`sessions.${index}.ar`, "اسم الجلسة عربي", session.ar)}
-              ${editorInput(`sessions.${index}.en`, "اسم الجلسة إنجليزي", session.en)}
-              ${editorInput(`sessions.${index}.v`, "القيمة", session.v, "number", "full")}
-            </div>
-          </div>`).join("")}
-      </section>
-      <section class="report-editor-section">
-        <h4>📚 تفصيل الدروس</h4>
-        ${(data.lessons || []).map((lesson, index) => `
-          <div class="report-editor-row">
-            <div class="report-editor-row-head">درس ${index + 1}<button type="button" class="report-editor-remove" data-editor-remove="lessons" data-editor-index="${index}">حذف</button></div>
-            <div class="report-editor-grid">
-              ${editorInput(`lessons.${index}.ar`, "الدرس عربي", lesson.ar)}
-              ${editorInput(`lessons.${index}.en`, "الدرس إنجليزي", lesson.en)}
-              ${editorInput(`lessons.${index}.grade`, "الدرجة", lesson.grade)}
-              ${editorInput(`lessons.${index}.quiz`, "الاختبار", lesson.quiz)}
-            </div>
-          </div>`).join("")}
-        <button type="button" class="report-editor-add-btn" data-editor-add="lessons">+ إضافة درس</button>
-      </section>
-      <section class="report-editor-section">
-        <h4>🏅 الشارات المكتسبة</h4>
-        <p class="report-editor-note">خانة الإيموجي تقبل أي Emoji مباشرة، ويمكنك اختيار أو كتابة أي رمز مثل ✅ ⚡ 🏆 📚.</p>
-        ${(data.badges || []).map((badge, index) => `
-          <div class="report-editor-row">
-            <div class="report-editor-row-head">شارة ${index + 1}<button type="button" class="report-editor-remove" data-editor-remove="badges" data-editor-index="${index}">حذف</button></div>
-            <div class="report-editor-grid">
-              <label class="report-editor-field"><span>الإيموجي</span><input list="edubiaBadgeEmojiList" data-edit-path="badges.${index}.ic" value="${escapeHtml(badge.ic || "🏅")}" /></label>
-              ${editorInput(`badges.${index}.t_ar`, "العنوان عربي", badge.t_ar)}
-              ${editorInput(`badges.${index}.t_en`, "العنوان إنجليزي", badge.t_en)}
-              ${editorTextarea(`badges.${index}.d_ar`, "الوصف عربي", badge.d_ar)}
-              ${editorTextarea(`badges.${index}.d_en`, "الوصف إنجليزي", badge.d_en)}
-            </div>
-          </div>`).join("")}
-        <button type="button" class="report-editor-add-btn" data-editor-add="badges">+ إضافة شارة</button>
-      </section>
-      <section class="report-editor-section">
-        <h4>🧭 الوحدات القادمة</h4>
-        ${(data.modules || []).map((module, index) => `
-          <div class="report-editor-row">
-            <div class="report-editor-row-head">وحدة ${index + 1}<button type="button" class="report-editor-remove" data-editor-remove="modules" data-editor-index="${index}">حذف</button></div>
-            <div class="report-editor-grid">
-              ${editorInput(`modules.${index}.ar`, "الاسم عربي", module.ar)}
-              ${editorInput(`modules.${index}.en`, "الاسم إنجليزي", module.en)}
-              ${editorSelect(`modules.${index}.status`, "الحالة", module.status, statusOptions)}
-              ${editorInput(`modules.${index}.pct`, "نسبة التقدم", module.pct, "number")}
-              ${editorTextarea(`modules.${index}.d_ar`, "الوصف عربي", module.d_ar)}
-              ${editorTextarea(`modules.${index}.d_en`, "الوصف إنجليزي", module.d_en)}
-            </div>
-          </div>`).join("")}
-        <button type="button" class="report-editor-add-btn" data-editor-add="modules">+ إضافة وحدة</button>
-      </section>
-    `;
-  }
-
-  function openReportEditor(payload, preferredFormat = "pdf") {
-    addStyleOnce();
-    addReportEditorStyleOnce();
-    const data = cloneReportData(buildReportData(payload || {}));
-    document.querySelector(".report-editor-overlay")?.remove();
-
-    const overlay = document.createElement("div");
-    overlay.className = "report-editor-overlay";
-    overlay.innerHTML = `<main class="report-editor-preview"></main><aside class="report-editor-panel"></aside>`;
-    document.body.appendChild(overlay);
-    const preview = overlay.querySelector(".report-editor-preview");
-    const panel = overlay.querySelector(".report-editor-panel");
-    let previewTimer = null;
-
-    function updatePreview() {
-      const metrics = buildMetrics({ reportDraft: data });
-      preview.innerHTML = `<div class="edubia-report-root edubia-report-preview-root">${reportHtml(metrics)}</div>`;
-    }
-
-    function schedulePreview() {
-      clearTimeout(previewTimer);
-      previewTimer = setTimeout(updatePreview, 120);
-    }
-
-    function renderPanel() {
-      panel.innerHTML = renderEditorPanel(data, preferredFormat);
-    }
-
-    function addItem(type) {
-      if (type === "lessons") data.lessons.push({ ar: "درس جديد", en: "New lesson", grade: "A", quiz: "—" });
-      if (type === "badges") data.badges.push({ ic: "🏅", t_ar: "شارة جديدة", t_en: "New Badge", d_ar: "وصف الشارة الجديدة.", d_en: "New badge description." });
-      if (type === "modules") data.modules.push({ ar: "وحدة جديدة", en: "New module", status: "soon", pct: 0, d_ar: "وصف الوحدة القادمة.", d_en: "Upcoming module description." });
-      renderPanel();
-      updatePreview();
-    }
-
-    panel.addEventListener("input", event => {
-      const target = event.target;
-      const path = target?.dataset?.editPath;
-      if (!path) return;
-      setByPath(data, path, target.value);
-      schedulePreview();
-    });
-
-    panel.addEventListener("change", event => {
-      const target = event.target;
-      const path = target?.dataset?.editPath;
-      if (!path) return;
-      setByPath(data, path, target.value);
-      schedulePreview();
-    });
-
-    panel.addEventListener("click", async event => {
-      const target = event.target.closest("button");
-      if (!target) return;
-      if (target.dataset.editorClose !== undefined) {
-        overlay.remove();
-        return;
-      }
-      if (target.dataset.editorAdd) {
-        addItem(target.dataset.editorAdd);
-        return;
-      }
-      if (target.dataset.editorRemove) {
-        const collection = target.dataset.editorRemove;
-        const index = Number(target.dataset.editorIndex);
-        if (Array.isArray(data[collection]) && Number.isFinite(index)) {
-          data[collection].splice(index, 1);
-          renderPanel();
-          updatePreview();
-        }
-        return;
-      }
-      if (target.dataset.editorDownload === "json") {
-        const fileName = safeFileName(`edubia-${data.fields?.student || "student"}.json`);
-        downloadBlob(fileName, "application/json;charset=utf-8", JSON.stringify(buildReportData({ reportDraft: data }), null, 2));
-        return;
-      }
-      if (target.dataset.editorDownload === "pdf") {
-        await downloadStudentReport({ reportDraft: data });
-      }
-    });
-
-    overlay.addEventListener("keydown", event => {
-      if (event.key === "Escape") overlay.remove();
-    });
-
-    renderPanel();
-    updatePreview();
+    window.setTimeout(() => {
+      link.remove();
+      URL.revokeObjectURL(url);
+    }, 300);
   }
 
   function downloadStudentReportJson(payload) {
     const data = buildReportData(payload || {});
-    const fileName = safeFileName(`feedback ${data.summary.student_name} — Edubia.json`);
+    const fileName = safeFileName(`edubia-${data.fields?.student || "student"}.json`);
     downloadBlob(fileName, "application/json;charset=utf-8", JSON.stringify(data, null, 2));
   }
 
@@ -1489,15 +1069,13 @@
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   }
 
-  async function downloadStudentReport(payload) {
+  async function saveMetricsAsPdf(metrics) {
     if (!window.html2canvas || !window.jspdf?.jsPDF) {
-      alert("PDF libraries are still loading. Please wait a few seconds and try again.");
+      alert("مكتبات PDF لسه بتحمل. استنى ثواني وجرب تاني.");
       return;
     }
 
     addStyleOnce();
-    const metrics = buildMetrics(payload || {});
-
     const root = document.createElement("div");
     root.className = "edubia-report-root";
     root.innerHTML = reportHtml(metrics);
@@ -1505,7 +1083,6 @@
 
     try {
       await waitForReportAssets(root);
-
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF("p", "pt", "a4");
       const pages = [...root.querySelectorAll(".edubia-report-page")];
@@ -1517,6 +1094,7 @@
         const canvas = await window.html2canvas(page, {
           scale: 2,
           useCORS: true,
+          allowTaint: true,
           backgroundColor: "#ffffff",
           logging: false,
           width: 794,
@@ -1526,7 +1104,7 @@
           scrollX: 0,
           scrollY: 0,
         });
-        const image = canvas.toDataURL("image/png");
+        const image = canvas.toDataURL("image/png", 1.0);
         if (index > 0) pdf.addPage();
         pdf.addImage(image, "PNG", 0, 0, pdfWidth, pdfHeight, undefined, "FAST");
       }
@@ -1535,11 +1113,245 @@
       pdf.save(fileName);
     } catch (error) {
       console.error("Edubia PDF download failed:", error);
-      alert(`PDF download failed: ${error?.message || error}. Please try again or download JSON for now.`);
+      alert(`فشل تحميل PDF: ${error?.message || error}. جرّب JSON أو افتح Edit وحمّل PDF من هناك.`);
     } finally {
       root.remove();
     }
   }
 
-  window.EdubiaReport = { downloadStudentReport, downloadStudentReportJson, buildReportData, buildMetrics, openReportEditor };
+  async function downloadStudentReport(payload) {
+    const metrics = payload?.app === "edubia-report" ? modelToMetrics(payload) : buildMetrics(payload || {});
+    await saveMetricsAsPdf(metrics);
+  }
+
+  const EDITOR_EMOJIS = "⭐ ✅ 🏆 ⚡ ⏱️ 📚 📅 🎓 💡 🔥 🌱 🤝 💬 🚀 🎯 🧠 📝 💪 ❤️ 👍 👏 🌟 🥇 🥈 🥉 🎉 📌 🗓️ 🧩 💻 🐍 🎨 🎮 🤖 📊 ✨".split(" ");
+  let editorState = null;
+
+  function ensureEditorStyle() {
+    if (document.getElementById("edubia-editor-style")) return;
+    const style = document.createElement("style");
+    style.id = "edubia-editor-style";
+    style.textContent = `
+      .edubia-report-editor-dialog{width:min(1580px,96vw);height:94vh;max-width:none;max-height:none;padding:0;border:0;border-radius:18px;overflow:hidden;background:#0b1730;color:#fff;box-shadow:0 24px 70px rgba(0,0,0,.45);}
+      .edubia-report-editor-dialog::backdrop{background:rgba(5,10,25,.72);}
+      .edubia-editor-shell{height:100%;display:flex;flex-direction:column;direction:rtl;font-family:"Cairo",Tahoma,Arial,sans-serif;}
+      .edubia-editor-head{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.12);background:#101f3d;}
+      .edubia-editor-head h2{margin:0;font-size:21px;color:#fff;}.edubia-editor-head p{margin:3px 0 0;color:#9db2d3;font-size:13px;}
+      .edubia-editor-actions{display:flex;gap:10px;flex-wrap:wrap}.edubia-editor-actions button,.edubia-array-add,.edubia-row-remove{border:0;border-radius:10px;padding:10px 14px;font-weight:900;cursor:pointer;font-family:inherit}.edubia-editor-actions .primary{background:#fb8500;color:#fff}.edubia-editor-actions .secondary{background:#eef4ff;color:#08265a}.edubia-editor-actions .close{background:#263754;color:#fff}
+      .edubia-editor-grid{display:grid;grid-template-columns:390px 1fr;gap:0;min-height:0;flex:1;}
+      .edubia-editor-form{overflow:auto;padding:14px;background:#0e1b36;border-left:1px solid rgba(255,255,255,.12);}
+      .edubia-editor-preview-pane{overflow:auto;background:#f3f6fb;padding:22px;direction:ltr;}
+      .edubia-editor-preview{width:794px;margin:0 auto;direction:rtl;}
+      .edubia-editor-preview .edubia-report-root{position:static!important;left:auto!important;top:auto!important;z-index:1!important;pointer-events:auto!important;width:794px!important;transform:none!important;}
+      .edubia-edit-section{border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px;margin-bottom:12px;background:#142440;}
+      .edubia-edit-section h3{margin:0 0 10px;font-size:16px;color:#fff;}.edubia-edit-section small{color:#9db2d3;display:block;margin:-5px 0 9px;line-height:1.5}
+      .edubia-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.edubia-edit-field{display:flex;flex-direction:column;gap:5px}.edubia-edit-field.full{grid-column:1/-1}.edubia-edit-field label{font-size:12px;color:#c7d5ee;font-weight:800}.edubia-edit-field input,.edubia-edit-field textarea,.edubia-edit-field select{width:100%;border:1px solid #31476a;border-radius:9px;background:#1b2d50;color:#fff;padding:9px;font-family:inherit;font-weight:700}.edubia-edit-field textarea{min-height:78px;resize:vertical;line-height:1.5}
+      .edubia-edit-row{display:grid;grid-template-columns:58px 1fr 70px 34px;gap:7px;align-items:end;margin-bottom:8px}.edubia-edit-row.badge{grid-template-columns:58px 1fr 1fr 34px}.edubia-edit-row.module{grid-template-columns:1fr 80px 70px 34px}.edubia-row-remove{background:#4d2030;color:#fff;padding:9px}.edubia-array-add{background:#1f8b4c;color:#fff;width:100%;margin-top:4px}.emoji-pick{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}.emoji-pick button{background:#1b2d50;border:1px solid #31476a;color:#fff;border-radius:8px;padding:5px 7px;cursor:pointer;font-size:17px}
+      @media(max-width:1050px){.edubia-editor-grid{grid-template-columns:1fr}.edubia-editor-preview-pane{display:none}.edubia-report-editor-dialog{height:96vh}.edubia-edit-grid{grid-template-columns:1fr}}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function ensureReportEditor() {
+    ensureEditorStyle();
+    let dialog = document.getElementById("edubiaReportEditor");
+    if (dialog) return dialog;
+    dialog = document.createElement("dialog");
+    dialog.id = "edubiaReportEditor";
+    dialog.className = "edubia-report-editor-dialog";
+    dialog.innerHTML = `
+      <div class="edubia-editor-shell">
+        <div class="edubia-editor-head">
+          <div><h2>تعديل التقرير قبل التحميل</h2><p>عدّل البيانات من اليسار، والمعاينة بتتحدث بنفس شكل ملف Edubia. بعد التعديل حمّل PDF أو JSON.</p></div>
+          <div class="edubia-editor-actions">
+            <button type="button" class="primary" id="edubiaEditorPdfBtn">Download PDF</button>
+            <button type="button" class="secondary" id="edubiaEditorJsonBtn">Download JSON</button>
+            <button type="button" class="close" id="edubiaEditorCloseBtn">×</button>
+          </div>
+        </div>
+        <div class="edubia-editor-grid">
+          <aside class="edubia-editor-form" id="edubiaEditorForm"></aside>
+          <section class="edubia-editor-preview-pane"><div class="edubia-editor-preview" id="edubiaEditorPreview"></div></section>
+        </div>
+      </div>`;
+    document.body.appendChild(dialog);
+
+    dialog.querySelector("#edubiaEditorCloseBtn").addEventListener("click", () => dialog.close());
+    dialog.querySelector("#edubiaEditorPdfBtn").addEventListener("click", async () => {
+      if (!editorState) return;
+      await downloadStudentReport(editorState);
+    });
+    dialog.querySelector("#edubiaEditorJsonBtn").addEventListener("click", () => {
+      if (!editorState) return;
+      downloadStudentReportJson(editorState);
+    });
+    dialog.querySelector("#edubiaEditorForm").addEventListener("input", event => {
+      const path = event.target?.dataset?.path;
+      if (!path || !editorState) return;
+      setByPath(editorState, path, event.target.value);
+      renderEditorPreview();
+    });
+    dialog.querySelector("#edubiaEditorForm").addEventListener("click", event => {
+      const emojiButton = event.target.closest("[data-emoji]");
+      if (emojiButton) {
+        const path = emojiButton.dataset.emojiPath;
+        if (path) {
+          setByPath(editorState, path, emojiButton.dataset.emoji);
+          renderEditorForm();
+          renderEditorPreview();
+        }
+        return;
+      }
+      const button = event.target.closest("[data-editor-action]");
+      if (!button || !editorState) return;
+      const action = button.dataset.editorAction;
+      const arrayName = button.dataset.array;
+      if (action === "add") addArrayItem(arrayName);
+      if (action === "remove") removeArrayItem(arrayName, Number(button.dataset.index));
+      renderEditorForm();
+      renderEditorPreview();
+    });
+    return dialog;
+  }
+
+  function setByPath(target, path, value) {
+    const parts = path.split(".");
+    let ref = target;
+    parts.slice(0, -1).forEach(part => {
+      ref = ref[Number.isInteger(Number(part)) ? Number(part) : part];
+    });
+    const key = parts[parts.length - 1];
+    ref[Number.isInteger(Number(key)) ? Number(key) : key] = value;
+  }
+
+  function field(path, label, value, type = "text", full = false) {
+    const textarea = type === "textarea";
+    return `<div class="edubia-edit-field ${full ? "full" : ""}"><label>${escapeHtml(label)}</label>${textarea ? `<textarea data-path="${path}">${escapeHtml(value || "")}</textarea>` : `<input data-path="${path}" type="${type}" value="${escapeHtml(value ?? "")}" />`}</div>`;
+  }
+
+  function renderEditorForm() {
+    const form = document.getElementById("edubiaEditorForm");
+    if (!form || !editorState) return;
+    const f = editorState.fields || {};
+    form.innerHTML = `
+      <section class="edubia-edit-section"><h3>بيانات الطالب والجلسة</h3><div class="edubia-edit-grid">
+        ${field("fields.student", "اسم الطالب", f.student)}
+        ${field("fields.course", "المساق", f.course)}
+        ${field("fields.level", "المستوى", f.level)}
+        ${field("fields.teacher", "المعلم", f.teacher)}
+        ${field("fields.period", "الشهر / الفترة", f.period)}
+        ${field("fields.date", "التاريخ", f.date)}
+        ${field("fields.issueDate", "تاريخ الإصدار", f.issueDate)}
+        ${field("fields.sessionNo", "رقم الجلسة", f.sessionNo, "number")}
+        ${field("fields.duration", "المدة بالدقائق", f.duration, "number")}
+        ${field("fields.finalGrade", "الدرجة النهائية", f.finalGrade)}
+      </div></section>
+      <section class="edubia-edit-section"><h3>الإحصائيات والحضور</h3><div class="edubia-edit-grid">
+        ${field("fields.topPct", "ضمن أفضل (%)", f.topPct, "number")}
+        ${field("fields.pace", "وتيرة التعلم", f.pace, "number")}
+        ${field("fields.attendance", "نسبة الحضور (%)", f.attendance, "number")}
+        ${field("fields.hwDone", "الواجبات المنجزة", f.hwDone, "number")}
+        ${field("fields.hwTotal", "إجمالي الواجبات", f.hwTotal, "number")}
+        ${field("fields.present", "عدد الحضور", f.present, "number")}
+        ${field("fields.absent", "عدد الغياب", f.absent, "number")}
+        ${field("fields.classesDone", "حصص منجزة", f.classesDone, "number")}
+        ${field("fields.classesTotal", "إجمالي الحصص", f.classesTotal, "number")}
+        ${field("fields.punctJoin", "الالتحاق بالوقت (0-5)", f.punctJoin, "number")}
+        ${field("fields.punctSubmit", "التسليم بالوقت (0-5)", f.punctSubmit, "number")}
+      </div></section>
+      <section class="edubia-edit-section"><h3>الملاحظات</h3><div class="edubia-edit-grid">
+        ${field("fields.strengths", "نقاط القوة", f.strengths, "textarea", true)}
+        ${field("fields.improve", "مجالات التحسين", f.improve, "textarea", true)}
+        ${field("fields.teacherNote", "ملاحظات المعلم", f.teacherNote, "textarea", true)}
+        ${field("fields.homework", "الخطوة الجاية / الواجب", f.homework, "textarea", true)}
+      </div></section>
+      ${renderArraySection("skills", "المهارات", "skill")}
+      ${renderArraySection("sessions", "التقدم عبر الجلسات", "session")}
+      ${renderArraySection("lessons", "تفصيل الدروس", "lesson")}
+      ${renderArraySection("badges", "الشارات المكتسبة", "badge", "خانة الإيموجي تقبل أي Emoji مباشرة، وكمان تقدر تختار من القائمة السريعة.")}
+      ${renderArraySection("modules", "الوحدات القادمة", "module")}
+    `;
+  }
+
+  function renderArraySection(arrayName, title, type, hint = "") {
+    const items = Array.isArray(editorState[arrayName]) ? editorState[arrayName] : [];
+    return `<section class="edubia-edit-section"><h3>${escapeHtml(title)}</h3>${hint ? `<small>${escapeHtml(hint)}</small>` : ""}${items.map((item, index) => renderArrayRow(arrayName, item, index, type)).join("")}<button type="button" class="edubia-array-add" data-editor-action="add" data-array="${arrayName}">+ إضافة</button></section>`;
+  }
+
+  function renderArrayRow(arrayName, item, index, type) {
+    if (type === "badge") {
+      return `<div class="edubia-edit-row badge">
+        <div class="edubia-edit-field"><label>Emoji</label><input data-path="${arrayName}.${index}.ic" value="${escapeHtml(item.ic || "🏅")}" /></div>
+        <div class="edubia-edit-field"><label>العنوان</label><input data-path="${arrayName}.${index}.t_ar" value="${escapeHtml(item.t_ar || "")}" /></div>
+        <div class="edubia-edit-field"><label>الوصف</label><input data-path="${arrayName}.${index}.d_ar" value="${escapeHtml(item.d_ar || "")}" /></div>
+        <button type="button" class="edubia-row-remove" data-editor-action="remove" data-array="${arrayName}" data-index="${index}">×</button>
+        <div class="emoji-pick" style="grid-column:1/-1">${EDITOR_EMOJIS.map(e => `<button type="button" data-emoji="${escapeHtml(e)}" data-emoji-path="${arrayName}.${index}.ic">${escapeHtml(e)}</button>`).join("")}</div>
+      </div>`;
+    }
+    if (type === "lesson") {
+      return `<div class="edubia-edit-row">
+        <div class="edubia-edit-field"><label>#</label><input value="${index + 1}" disabled /></div>
+        <div class="edubia-edit-field"><label>الدرس</label><input data-path="${arrayName}.${index}.ar" value="${escapeHtml(item.ar || "")}" /></div>
+        <div class="edubia-edit-field"><label>الدرجة</label><input data-path="${arrayName}.${index}.grade" value="${escapeHtml(item.grade || "")}" /></div>
+        <button type="button" class="edubia-row-remove" data-editor-action="remove" data-array="${arrayName}" data-index="${index}">×</button>
+      </div>`;
+    }
+    if (type === "module") {
+      return `<div class="edubia-edit-row module">
+        <div class="edubia-edit-field"><label>الوحدة</label><input data-path="${arrayName}.${index}.ar" value="${escapeHtml(item.ar || "")}" /></div>
+        <div class="edubia-edit-field"><label>الحالة</label><input data-path="${arrayName}.${index}.status" value="${escapeHtml(item.status || "soon")}" /></div>
+        <div class="edubia-edit-field"><label>%</label><input type="number" data-path="${arrayName}.${index}.pct" value="${escapeHtml(item.pct ?? 0)}" /></div>
+        <button type="button" class="edubia-row-remove" data-editor-action="remove" data-array="${arrayName}" data-index="${index}">×</button>
+        <div class="edubia-edit-field full" style="grid-column:1/-1"><label>الوصف</label><textarea data-path="${arrayName}.${index}.d_ar">${escapeHtml(item.d_ar || "")}</textarea></div>
+      </div>`;
+    }
+    return `<div class="edubia-edit-row">
+      <div class="edubia-edit-field"><label>#</label><input value="${index + 1}" disabled /></div>
+      <div class="edubia-edit-field"><label>الاسم</label><input data-path="${arrayName}.${index}.ar" value="${escapeHtml(item.ar || "")}" /></div>
+      <div class="edubia-edit-field"><label>القيمة</label><input type="number" step="0.1" data-path="${arrayName}.${index}.v" value="${escapeHtml(item.v ?? 0)}" /></div>
+      <button type="button" class="edubia-row-remove" data-editor-action="remove" data-array="${arrayName}" data-index="${index}">×</button>
+    </div>`;
+  }
+
+  function addArrayItem(arrayName) {
+    if (!Array.isArray(editorState[arrayName])) editorState[arrayName] = [];
+    const i = editorState[arrayName].length + 1;
+    const defaults = {
+      skills: { ar: "مهارة جديدة", en: "New Skill", v: 4 },
+      sessions: { ar: `جلسة ${i}`, en: `S${i}`, v: 4 },
+      lessons: { ar: "درس جديد", en: "New Lesson", grade: "A", quiz: "⭐" },
+      badges: { ic: "🏅", t_ar: "شارة جديدة", t_en: "New Badge", d_ar: "وصف الشارة الجديدة.", d_en: "" },
+      modules: { ar: "وحدة جديدة", en: "New Module", status: "soon", pct: 0, d_ar: "وصف الوحدة الجديدة.", d_en: "" },
+    };
+    editorState[arrayName].push(defaults[arrayName] || {});
+  }
+
+  function removeArrayItem(arrayName, index) {
+    if (!Array.isArray(editorState[arrayName])) return;
+    editorState[arrayName].splice(index, 1);
+  }
+
+  function renderEditorPreview() {
+    const preview = document.getElementById("edubiaEditorPreview");
+    if (!preview || !editorState) return;
+    addStyleOnce();
+    const metrics = modelToMetrics(editorState);
+    preview.innerHTML = `<div class="edubia-report-root">${reportHtml(metrics)}</div>`;
+  }
+
+  function openReportEditor(payload) {
+    const dialog = ensureReportEditor();
+    editorState = buildReportData(payload || {});
+    renderEditorForm();
+    renderEditorPreview();
+    if (typeof dialog.showModal === "function" && !dialog.open) dialog.showModal();
+  }
+
+  window.EdubiaReport = {
+    downloadStudentReport,
+    downloadStudentReportJson,
+    openReportEditor,
+    buildReportData,
+    buildMetrics,
+  };
 })();

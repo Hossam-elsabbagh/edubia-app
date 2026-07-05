@@ -244,8 +244,8 @@ async function downloadReportFromFeedbackWithFormat(feedbackId, format, range) {
     selectedRange: range,
   };
 
-  if (window.EdubiaReport?.openReportEditor) {
-    window.EdubiaReport.openReportEditor(payload, format);
+  if (format === "edit") {
+    window.EdubiaReport.openReportEditor(payload);
   } else if (format === "json") {
     window.EdubiaReport.downloadStudentReportJson(payload);
   } else {
