@@ -1380,8 +1380,14 @@ downloadForm?.addEventListener("submit", async event => {
   );
   if (!range) return;
 
-  await downloadStudentReportByFormat(downloadTargetStudentId, format, range);
-  closeDownloadModal();
+  const targetId = downloadTargetStudentId;
+  if (format === "edit") {
+    closeDownloadModal();
+    await downloadStudentReportByFormat(targetId, format, range);
+  } else {
+    await downloadStudentReportByFormat(targetId, format, range);
+    closeDownloadModal();
+  }
 });
 
 document.getElementById("closeDownloadModal")?.addEventListener("click", closeDownloadModal);

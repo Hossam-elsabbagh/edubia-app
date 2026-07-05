@@ -508,8 +508,14 @@ coordinatorDownloadForm?.addEventListener("submit", async event => {
   );
   if (!range) return;
 
-  await downloadReportFromFeedbackWithFormat(downloadTargetFeedbackId, format, range);
-  closeCoordinatorDownloadModal();
+  const targetId = downloadTargetFeedbackId;
+  if (format === "edit") {
+    closeCoordinatorDownloadModal();
+    await downloadReportFromFeedbackWithFormat(targetId, format, range);
+  } else {
+    await downloadReportFromFeedbackWithFormat(targetId, format, range);
+    closeCoordinatorDownloadModal();
+  }
 });
 
 document.getElementById("closeCoordinatorDownloadModal")?.addEventListener("click", closeCoordinatorDownloadModal);

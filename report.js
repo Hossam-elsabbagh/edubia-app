@@ -11,15 +11,16 @@
     }
 
     .edubia-report-root {
-      position: fixed;
-      left: 0;
+      position: absolute;
+      left: -10000px;
       top: 0;
       width: 794px;
-      z-index: -9999;
+      z-index: 0;
       pointer-events: none;
       font-family: "Cairo", "Tahoma", Arial, sans-serif;
       color: #09224a;
       direction: rtl;
+      background: #ffffff;
     }
 
     .edubia-report-page {
@@ -314,6 +315,16 @@
     .edubia-page-plain .edubia-section-title { margin-bottom: 22px; }
     .edubia-page-plain .edubia-card { margin-bottom: 14px; }
 
+
+    .edubia-page-lessons .edubia-table-card { padding: 18px; margin-bottom: 16px; }
+    .edubia-page-lessons .edubia-chart-card { margin-top: 0; margin-bottom: 16px; }
+    .edubia-page-lessons .edubia-chart-wrap { height: 235px; }
+    .edubia-page-lessons .edubia-attendance-card { margin-top: 0; }
+    .edubia-page-notes .edubia-note-grid { margin-top: 0; }
+    .edubia-page-notes .edubia-badge-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .edubia-page-scale .edubia-page-body { display: flex; flex-direction: column; height: 100%; }
+    .edubia-page-scale .edubia-scale-card { margin-top: 0; }
+    .edubia-page-scale .edubia-footer { margin-top: auto; }
 
     .edubia-next-page .edubia-card { padding: 17px; }
     .edubia-next-page h3 { line-height: 1.25; }
@@ -732,7 +743,7 @@
         </div>
       </div>
 
-      <div class="edubia-report-page edubia-page-plain">
+      <div class="edubia-report-page edubia-page-plain edubia-page-lessons">
         <div class="edubia-report-content edubia-page-body">
           <section class="edubia-card edubia-table-card">
             <div class="edubia-title-right"><div class="edubia-section-title">تفصيل الدروس</div></div>
@@ -747,24 +758,24 @@
             <div class="edubia-title-right"><div class="edubia-section-title">تطوّر الأداء عبر الجلسات</div></div>
             ${renderChart(metrics)}
           </section>
-        </div>
-      </div>
 
-      <div class="edubia-report-page edubia-page-plain">
-        <div class="edubia-report-content edubia-page-body">
-          <section class="edubia-card edubia-attendance-card" style="margin-top:0; margin-bottom:16px;">
+          <section class="edubia-card edubia-attendance-card">
             <div class="edubia-title-right"><div class="edubia-section-title">الحضور والانضباط</div></div>
             <div class="edubia-attendance-grid">
               <div class="edubia-rating-lines">
                 <div><span class="stars">${escapeHtml(starString(metrics.commitmentAvg))}</span> الالتحاق بالوقت</div>
                 <div><span class="stars">${escapeHtml(starString(metrics.homeworkPct / 20))}</span> التسليم بالوقت</div>
               </div>
-              <div class="edubia-attendance-stat"><div><strong>${escapeHtml(metrics.attendanceTotal)} / ${escapeHtml(metrics.attendanceTotal)}</strong><br>حصص منجزة</div></div>
+              <div class="edubia-attendance-stat"><div><strong>${escapeHtml(metrics.sessionCount)} / ${escapeHtml(metrics.attendanceTotal || metrics.sessionCount)}</strong><br>حصص منجزة</div></div>
               <div class="edubia-attendance-stat absent"><div><strong>${escapeHtml(metrics.absent)}</strong><br>غائب</div></div>
               <div class="edubia-attendance-stat present"><div><strong>${escapeHtml(metrics.present)}</strong><br>حاضر</div></div>
             </div>
           </section>
+        </div>
+      </div>
 
+      <div class="edubia-report-page edubia-page-plain edubia-page-notes">
+        <div class="edubia-report-content edubia-page-body">
           <section class="edubia-note-grid">
             <div class="edubia-note green"><h3>💪 نقاط القوة</h3>${renderList(metrics.strengths)}</div>
             <div class="edubia-note red"><h3>🎯 مجالات التحسين</h3>${renderList(metrics.improvements)}</div>
@@ -798,7 +809,12 @@
               <div class="edubia-tip"><div class="edubia-tip-icon">🤝</div><strong>شارك</strong><p>تابع تقدم ابنك بانتظام واحتفلوا بإنجازاته سويًا.</p></div>
             </div>
           </section>
+        </div>
+      </div>
 
+      <div class="edubia-report-page edubia-page-plain edubia-page-scale">
+        <div class="edubia-cover-corners"><span class="edubia-corner tr"></span><span class="edubia-corner tl"></span><span class="edubia-corner br"></span><span class="edubia-corner bl"></span></div>
+        <div class="edubia-report-content edubia-page-body">
           <section class="edubia-card edubia-scale-card">
             <div class="edubia-title-right"><div class="edubia-section-title">سلم الدرجات المرجعي</div></div>
             <div class="edubia-grade-scale">
@@ -812,7 +828,7 @@
 
           <footer class="edubia-footer">
             <span>المعلم<br>${escapeHtml(metrics.instructor)}</span>
-            <span>تم إنشاء التقرير بواسطة Edubia · تاريخ الإصدار: ${escapeHtml(formatDate(new Date().toISOString().slice(0, 10)))}</span>
+            <span>تم إنشاء التقرير بواسطة Edubia · تاريخ الإصدار: ${escapeHtml(metrics.issueDateText || metrics.dateText)}</span>
           </footer>
         </div>
       </div>`;
@@ -908,7 +924,7 @@
       hwTotal: String(metrics.homeworkTotal || 0),
       present: String(metrics.present || 0),
       absent: String(metrics.absent || 0),
-      classesDone: String(metrics.attendanceTotal || metrics.sessionCount || 0),
+      classesDone: String(metrics.sessionCount || metrics.attendanceTotal || 0),
       classesTotal: String(metrics.attendanceTotal || metrics.sessionCount || 0),
       punctJoin: String(round1(metrics.commitmentAvg || 0)),
       punctSubmit: String(round1(metrics.homeworkPct ? metrics.homeworkPct / 20 : 0)),
@@ -997,6 +1013,7 @@
       level: fields.level || DEFAULT_LEVEL,
       date: dateValue,
       dateText: formatDate(dateValue),
+      issueDateText: formatDate(fields.issueDate || dateValue),
       monthText: fields.period || getArabicMonth(dateValue),
       instructor: fields.teacher || INSTRUCTOR_AR,
       sessionNo: fields.sessionNo || "-",
@@ -1124,7 +1141,12 @@
     await saveMetricsAsPdf(metrics);
   }
 
-  const EDITOR_EMOJIS = "⭐ ✅ 🏆 ⚡ ⏱️ 📚 📅 🎓 💡 🔥 🌱 🤝 💬 🚀 🎯 🧠 📝 💪 ❤️ 👍 👏 🌟 🥇 🥈 🥉 🎉 📌 🗓️ 🧩 💻 🐍 🎨 🎮 🤖 📊 ✨".split(" ");
+  const EDITOR_EMOJIS = [
+    "⭐","🌟","✨","✅","☑️","🏆","🥇","🥈","🥉","⚡","🔥","💯","🚀","🎯","🧠","💡","📚","📖","📝","✍️",
+    "⏱️","⏰","📅","🗓️","🎓","💻","🐍","📊","📈","🧩","🎨","🎮","🤖","🔬","🧪","🔢","🔤","🖥️","⌨️","🖱️",
+    "🌱","🤝","💬","💪","❤️","👍","👏","🙌","🙂","😊","😃","😍","🤩","😎","🥳","🎉","🎊","📌","🔔","🏅",
+    "🦉","🛡️","🌈","🌞","🌙","☀️","💎","🔑","🧭","🪄","🎁","📦","🧑‍💻","👨‍💻","👩‍💻","🧑‍🎓","👨‍🎓","👩‍🎓"
+  ];
   let editorState = null;
 
   function ensureEditorStyle() {
@@ -1132,22 +1154,29 @@
     const style = document.createElement("style");
     style.id = "edubia-editor-style";
     style.textContent = `
-      .edubia-report-editor-dialog{width:min(1580px,96vw);height:94vh;max-width:none;max-height:none;padding:0;border:0;border-radius:18px;overflow:hidden;background:#0b1730;color:#fff;box-shadow:0 24px 70px rgba(0,0,0,.45);}
-      .edubia-report-editor-dialog::backdrop{background:rgba(5,10,25,.72);}
-      .edubia-editor-shell{height:100%;display:flex;flex-direction:column;direction:rtl;font-family:"Cairo",Tahoma,Arial,sans-serif;}
-      .edubia-editor-head{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.12);background:#101f3d;}
-      .edubia-editor-head h2{margin:0;font-size:21px;color:#fff;}.edubia-editor-head p{margin:3px 0 0;color:#9db2d3;font-size:13px;}
-      .edubia-editor-actions{display:flex;gap:10px;flex-wrap:wrap}.edubia-editor-actions button,.edubia-array-add,.edubia-row-remove{border:0;border-radius:10px;padding:10px 14px;font-weight:900;cursor:pointer;font-family:inherit}.edubia-editor-actions .primary{background:#fb8500;color:#fff}.edubia-editor-actions .secondary{background:#eef4ff;color:#08265a}.edubia-editor-actions .close{background:#263754;color:#fff}
-      .edubia-editor-grid{display:grid;grid-template-columns:390px 1fr;gap:0;min-height:0;flex:1;}
-      .edubia-editor-form{overflow:auto;padding:14px;background:#0e1b36;border-left:1px solid rgba(255,255,255,.12);}
-      .edubia-editor-preview-pane{overflow:auto;background:#f3f6fb;padding:22px;direction:ltr;}
+      .edubia-report-editor-dialog{width:100vw;height:100vh;max-width:none;max-height:none;margin:0;padding:0;border:0;border-radius:0;overflow:hidden;background:#081329;color:#fff;box-shadow:none;}
+      .edubia-report-editor-dialog::backdrop{background:#081329;}
+      .edubia-editor-shell{height:100%;display:grid;grid-template-columns:minmax(0,1fr) 392px;direction:rtl;font-family:"Cairo",Tahoma,Arial,sans-serif;background:#071225;}
+      .edubia-editor-preview-pane{grid-column:1;overflow:auto;background:#eef2f8;padding:28px 28px 56px;direction:ltr;}
       .edubia-editor-preview{width:794px;margin:0 auto;direction:rtl;}
-      .edubia-editor-preview .edubia-report-root{position:static!important;left:auto!important;top:auto!important;z-index:1!important;pointer-events:auto!important;width:794px!important;transform:none!important;}
-      .edubia-edit-section{border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px;margin-bottom:12px;background:#142440;}
-      .edubia-edit-section h3{margin:0 0 10px;font-size:16px;color:#fff;}.edubia-edit-section small{color:#9db2d3;display:block;margin:-5px 0 9px;line-height:1.5}
-      .edubia-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.edubia-edit-field{display:flex;flex-direction:column;gap:5px}.edubia-edit-field.full{grid-column:1/-1}.edubia-edit-field label{font-size:12px;color:#c7d5ee;font-weight:800}.edubia-edit-field input,.edubia-edit-field textarea,.edubia-edit-field select{width:100%;border:1px solid #31476a;border-radius:9px;background:#1b2d50;color:#fff;padding:9px;font-family:inherit;font-weight:700}.edubia-edit-field textarea{min-height:78px;resize:vertical;line-height:1.5}
-      .edubia-edit-row{display:grid;grid-template-columns:58px 1fr 70px 34px;gap:7px;align-items:end;margin-bottom:8px}.edubia-edit-row.badge{grid-template-columns:58px 1fr 1fr 34px}.edubia-edit-row.module{grid-template-columns:1fr 80px 70px 34px}.edubia-row-remove{background:#4d2030;color:#fff;padding:9px}.edubia-array-add{background:#1f8b4c;color:#fff;width:100%;margin-top:4px}.emoji-pick{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}.emoji-pick button{background:#1b2d50;border:1px solid #31476a;color:#fff;border-radius:8px;padding:5px 7px;cursor:pointer;font-size:17px}
-      @media(max-width:1050px){.edubia-editor-grid{grid-template-columns:1fr}.edubia-editor-preview-pane{display:none}.edubia-report-editor-dialog{height:96vh}.edubia-edit-grid{grid-template-columns:1fr}}
+      .edubia-editor-preview .edubia-report-root{position:static!important;left:auto!important;top:auto!important;z-index:1!important;pointer-events:auto!important;width:794px!important;transform:none!important;background:#fff!important;}
+      .edubia-editor-form{grid-column:2;grid-row:1;overflow:auto;background:linear-gradient(180deg,#101c38 0%,#0c1730 100%);border-left:1px solid rgba(255,255,255,.16);padding:16px;direction:rtl;}
+      .edubia-editor-form::-webkit-scrollbar{width:9px}.edubia-editor-form::-webkit-scrollbar-track{background:#071225}.edubia-editor-form::-webkit-scrollbar-thumb{background:#4e6388;border-radius:999px}
+      .edubia-editor-top{position:sticky;top:0;z-index:5;margin:-16px -16px 14px;padding:18px 16px 16px;background:linear-gradient(180deg,#101c38 70%,rgba(16,28,56,.92));border-bottom:1px solid rgba(255,255,255,.1);}
+      .edubia-editor-close{position:absolute;left:12px;top:12px;width:34px;height:34px;border:0;border-radius:11px;background:#263a62;color:#fff;font-size:18px;font-weight:900;cursor:pointer;}
+      .edubia-editor-title{padding-left:38px;text-align:right;margin-bottom:12px}.edubia-editor-title h2{margin:0 0 5px;color:#fff;font-size:22px;font-weight:900}.edubia-editor-title p{margin:0;color:#9fb1d2;font-size:12px;line-height:1.6;font-weight:700}
+      .edubia-editor-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.edubia-editor-actions .primary{grid-column:1/-1}.edubia-editor-actions button{border:1px solid rgba(255,255,255,.18);border-radius:13px;padding:13px 12px;font-family:inherit;font-weight:900;cursor:pointer;color:#fff;box-shadow:0 10px 24px rgba(0,0,0,.16)}
+      .edubia-editor-actions .primary{background:linear-gradient(135deg,#ffbe73,#d46a00);font-size:15px}.edubia-editor-actions .secondary{background:#eaf2ff;color:#08265a}.edubia-editor-actions .outline{background:#172743;color:#fff}
+      .edubia-edit-section{border:1px solid rgba(211,222,242,.22);border-radius:17px;padding:14px 13px;margin-bottom:14px;background:rgba(20,36,64,.72);box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+      .edubia-edit-section h3{margin:0 0 12px;color:#fff;font-size:17px;font-weight:900;text-align:right;display:flex;align-items:center;justify-content:flex-start;gap:8px}.edubia-edit-section h3::before{content:"";width:10px;height:10px;border-radius:999px;background:linear-gradient(135deg,#ffbd73,#ff7a00);box-shadow:0 0 12px rgba(255,138,0,.55)}
+      .edubia-edit-section small{display:block;margin:-6px 0 12px;color:#9fb1d2;font-size:12px;line-height:1.5;font-weight:700}.edubia-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.edubia-edit-field{min-width:0;display:flex;flex-direction:column;gap:6px}.edubia-edit-field.full{grid-column:1/-1}.edubia-edit-field label{color:#c8d6ee;font-size:12px;font-weight:900;text-align:right}
+      .edubia-edit-field input,.edubia-edit-field textarea,.edubia-edit-field select{width:100%;min-width:0;border:1px solid #314461;border-radius:10px;background:#1b2d4d;color:#fff;padding:10px 11px;font-family:inherit;font-size:14px;font-weight:700;outline:none;direction:rtl;text-align:right}.edubia-edit-field textarea{min-height:84px;resize:vertical;line-height:1.55}.edubia-edit-field input:focus,.edubia-edit-field textarea:focus,.edubia-edit-field select:focus{border-color:#ff9b23;box-shadow:0 0 0 3px rgba(251,133,0,.12)}
+      .edubia-edit-row{display:grid;grid-template-columns:34px minmax(0,1fr) 70px;gap:8px;align-items:end;margin-bottom:10px;padding:9px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(8,17,35,.35)}
+      .edubia-edit-row .edubia-row-remove{grid-column:1;grid-row:1;align-self:stretch}.edubia-edit-row .wide{grid-column:2 / span 2}.edubia-edit-row .full{grid-column:1/-1}.edubia-row-remove{border:0;border-radius:10px;background:#61304a;color:#ff9a9a;font-size:18px;font-weight:900;cursor:pointer;min-height:42px}.edubia-row-remove:hover{background:#7a3658;color:#fff}
+      .edubia-array-add{width:100%;border:1px dashed #fb8500;border-radius:13px;background:rgba(251,133,0,.05);color:#ffd19a;padding:13px;font-family:inherit;font-weight:900;cursor:pointer;margin-top:4px}.edubia-array-add:hover{background:rgba(251,133,0,.12)}
+      .edubia-badge-row{display:grid;grid-template-columns:34px minmax(0,1fr) 64px;gap:8px;align-items:end}.edubia-badge-row .title-field{grid-column:2}.edubia-badge-row .emoji-field{grid-column:3}.edubia-badge-row .desc-field{grid-column:1/-1}.emoji-dropdown{grid-column:1/-1;position:relative}.emoji-dropdown summary{list-style:none;cursor:pointer;border:1px dashed rgba(251,133,0,.75);border-radius:12px;color:#ffd19a;background:rgba(251,133,0,.05);padding:9px 10px;text-align:center;font-weight:900}.emoji-dropdown summary::-webkit-details-marker{display:none}.emoji-grid{margin-top:8px;display:grid;grid-template-columns:repeat(8,1fr);gap:6px;max-height:190px;overflow:auto;padding:7px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#101f3d}.emoji-grid button{border:0;border-radius:8px;background:#243757;min-height:32px;font-size:18px;cursor:pointer}.emoji-grid button:hover{background:#fb8500}
+      .edubia-module-row{grid-template-columns:34px 1fr 82px}.edubia-module-row .module-title{grid-column:2}.edubia-module-row .module-pct{grid-column:3}.edubia-module-row .module-status{grid-column:2/4}.edubia-module-row .module-desc{grid-column:1/-1}.edubia-note-muted{color:#8fa1bf;font-size:11px;line-height:1.6;margin-top:10px;text-align:center}
+      @media(max-width:1050px){.edubia-editor-shell{grid-template-columns:1fr}.edubia-editor-form{grid-column:1}.edubia-editor-preview-pane{display:none}.edubia-report-editor-dialog{height:100vh}.edubia-edit-grid{grid-template-columns:1fr}}
     `;
     document.head.appendChild(style);
   }
@@ -1156,42 +1185,32 @@
     ensureEditorStyle();
     let dialog = document.getElementById("edubiaReportEditor");
     if (dialog) return dialog;
+
     dialog = document.createElement("dialog");
     dialog.id = "edubiaReportEditor";
     dialog.className = "edubia-report-editor-dialog";
     dialog.innerHTML = `
       <div class="edubia-editor-shell">
-        <div class="edubia-editor-head">
-          <div><h2>تعديل التقرير قبل التحميل</h2><p>عدّل البيانات من اليسار، والمعاينة بتتحدث بنفس شكل ملف Edubia. بعد التعديل حمّل PDF أو JSON.</p></div>
-          <div class="edubia-editor-actions">
-            <button type="button" class="primary" id="edubiaEditorPdfBtn">Download PDF</button>
-            <button type="button" class="secondary" id="edubiaEditorJsonBtn">Download JSON</button>
-            <button type="button" class="close" id="edubiaEditorCloseBtn">×</button>
-          </div>
-        </div>
-        <div class="edubia-editor-grid">
-          <aside class="edubia-editor-form" id="edubiaEditorForm"></aside>
-          <section class="edubia-editor-preview-pane"><div class="edubia-editor-preview" id="edubiaEditorPreview"></div></section>
-        </div>
+        <section class="edubia-editor-preview-pane"><div class="edubia-editor-preview" id="edubiaEditorPreview"></div></section>
+        <aside class="edubia-editor-form" id="edubiaEditorForm"></aside>
       </div>`;
     document.body.appendChild(dialog);
 
-    dialog.querySelector("#edubiaEditorCloseBtn").addEventListener("click", () => dialog.close());
-    dialog.querySelector("#edubiaEditorPdfBtn").addEventListener("click", async () => {
-      if (!editorState) return;
-      await downloadStudentReport(editorState);
-    });
-    dialog.querySelector("#edubiaEditorJsonBtn").addEventListener("click", () => {
-      if (!editorState) return;
-      downloadStudentReportJson(editorState);
-    });
-    dialog.querySelector("#edubiaEditorForm").addEventListener("input", event => {
+    const updateFromInput = event => {
       const path = event.target?.dataset?.path;
       if (!path || !editorState) return;
       setByPath(editorState, path, event.target.value);
       renderEditorPreview();
-    });
-    dialog.querySelector("#edubiaEditorForm").addEventListener("click", event => {
+    };
+    dialog.querySelector("#edubiaEditorForm").addEventListener("input", updateFromInput);
+    dialog.querySelector("#edubiaEditorForm").addEventListener("change", updateFromInput);
+    dialog.querySelector("#edubiaEditorForm").addEventListener("click", async event => {
+      const closeButton = event.target.closest("[data-editor-close]");
+      if (closeButton) { dialog.close(); return; }
+      const pdfButton = event.target.closest("[data-editor-download-pdf]");
+      if (pdfButton) { if (editorState) await downloadStudentReport(editorState); return; }
+      const jsonButton = event.target.closest("[data-editor-download-json]");
+      if (jsonButton) { if (editorState) downloadStudentReportJson(editorState); return; }
       const emojiButton = event.target.closest("[data-emoji]");
       if (emojiButton) {
         const path = emojiButton.dataset.emojiPath;
@@ -1224,9 +1243,10 @@
     ref[Number.isInteger(Number(key)) ? Number(key) : key] = value;
   }
 
-  function field(path, label, value, type = "text", full = false) {
+  function field(path, label, value, type = "text", full = false, extraClass = "") {
     const textarea = type === "textarea";
-    return `<div class="edubia-edit-field ${full ? "full" : ""}"><label>${escapeHtml(label)}</label>${textarea ? `<textarea data-path="${path}">${escapeHtml(value || "")}</textarea>` : `<input data-path="${path}" type="${type}" value="${escapeHtml(value ?? "")}" />`}</div>`;
+    const numericAttrs = type === "number" ? ' inputmode="decimal" step="0.1"' : "";
+    return `<div class="edubia-edit-field ${full ? "full" : ""} ${extraClass}"><label>${escapeHtml(label)}</label>${textarea ? `<textarea data-path="${path}">${escapeHtml(value || "")}</textarea>` : `<input data-path="${path}" type="${type}"${numericAttrs} value="${escapeHtml(value ?? "")}" />`}</div>`;
   }
 
   function renderEditorForm() {
@@ -1234,8 +1254,25 @@
     if (!form || !editorState) return;
     const f = editorState.fields || {};
     form.innerHTML = `
+      <div class="edubia-editor-top">
+        <button type="button" class="edubia-editor-close" data-editor-close>×</button>
+        <div class="edubia-editor-title">
+          <h2>Edubia تقارير</h2>
+          <p>عدّل البيانات من هنا، والمعاينة على الشمال بتتحدث بنفس شكل ملف PDF.</p>
+        </div>
+        <div class="edubia-editor-actions">
+          <button type="button" class="primary" data-editor-download-pdf>PDF حفظ / طباعة 🖨️</button>
+          <button type="button" class="secondary" data-editor-download-json>JSON حفظ 📄</button>
+          <button type="button" class="outline" data-editor-close>إغلاق التعديل</button>
+        </div>
+      </div>
+
+      <section class="edubia-edit-section"><h3>حفظ وفتح</h3>
+        <div class="edubia-note-muted">زر Edit يفتح التقرير كامل للتعديل قبل التحميل. بعد أي تعديل اضغط PDF أو JSON من الأعلى.</div>
+      </section>
+
       <section class="edubia-edit-section"><h3>بيانات الطالب والجلسة</h3><div class="edubia-edit-grid">
-        ${field("fields.student", "اسم الطالب", f.student)}
+        ${field("fields.student", "اسم الطالب", f.student, "text", true)}
         ${field("fields.course", "المساق", f.course)}
         ${field("fields.level", "المستوى", f.level)}
         ${field("fields.teacher", "المعلم", f.teacher)}
@@ -1246,12 +1283,30 @@
         ${field("fields.duration", "المدة بالدقائق", f.duration, "number")}
         ${field("fields.finalGrade", "الدرجة النهائية", f.finalGrade)}
       </div></section>
-      <section class="edubia-edit-section"><h3>الإحصائيات والحضور</h3><div class="edubia-edit-grid">
+
+      <section class="edubia-edit-section"><h3>ملخص الأداء والترتيب</h3><div class="edubia-edit-grid">
         ${field("fields.topPct", "ضمن أفضل (%)", f.topPct, "number")}
         ${field("fields.pace", "وتيرة التعلم", f.pace, "number")}
-        ${field("fields.attendance", "نسبة الحضور (%)", f.attendance, "number")}
+      </div></section>
+
+      <section class="edubia-edit-section"><h3>المهارات (0 - 5)</h3>
+        ${renderArrayRows("skills", "skill")}
+        <button type="button" class="edubia-array-add" data-editor-action="add" data-array="skills">+ إضافة مهارة</button>
+      </section>
+
+      <section class="edubia-edit-section"><h3>تفصيل الدروس</h3>
+        ${renderArrayRows("lessons", "lesson")}
+        <button type="button" class="edubia-array-add" data-editor-action="add" data-array="lessons">+ إضافة درس</button>
+        ${field("fields.finalGrade", "الدرجة النهائية", f.finalGrade, "text", true)}
+      </section>
+
+      <section class="edubia-edit-section"><h3>الإحصائيات والواجبات</h3><div class="edubia-edit-grid">
+        ${field("fields.attendance", "نسبة الحضور (%)", f.attendance, "number", true)}
         ${field("fields.hwDone", "الواجبات المنجزة", f.hwDone, "number")}
         ${field("fields.hwTotal", "إجمالي الواجبات", f.hwTotal, "number")}
+      </div></section>
+
+      <section class="edubia-edit-section"><h3>الحضور والانضباط</h3><div class="edubia-edit-grid">
         ${field("fields.present", "عدد الحضور", f.present, "number")}
         ${field("fields.absent", "عدد الغياب", f.absent, "number")}
         ${field("fields.classesDone", "حصص منجزة", f.classesDone, "number")}
@@ -1259,18 +1314,38 @@
         ${field("fields.punctJoin", "الالتحاق بالوقت (0-5)", f.punctJoin, "number")}
         ${field("fields.punctSubmit", "التسليم بالوقت (0-5)", f.punctSubmit, "number")}
       </div></section>
-      <section class="edubia-edit-section"><h3>الملاحظات</h3><div class="edubia-edit-grid">
+
+      <section class="edubia-edit-section"><h3>التقدم عبر الجلسات</h3>
+        ${renderArrayRows("sessions", "session")}
+        <button type="button" class="edubia-array-add" data-editor-action="add" data-array="sessions">+ إضافة جلسة</button>
+      </section>
+
+      <section class="edubia-edit-section"><h3>نقاط القوة ومجالات التحسين</h3><div class="edubia-edit-grid">
         ${field("fields.strengths", "نقاط القوة", f.strengths, "textarea", true)}
         ${field("fields.improve", "مجالات التحسين", f.improve, "textarea", true)}
-        ${field("fields.teacherNote", "ملاحظات المعلم", f.teacherNote, "textarea", true)}
-        ${field("fields.homework", "الخطوة الجاية / الواجب", f.homework, "textarea", true)}
       </div></section>
-      ${renderArraySection("skills", "المهارات", "skill")}
-      ${renderArraySection("sessions", "التقدم عبر الجلسات", "session")}
-      ${renderArraySection("lessons", "تفصيل الدروس", "lesson")}
-      ${renderArraySection("badges", "الشارات المكتسبة", "badge", "خانة الإيموجي تقبل أي Emoji مباشرة، وكمان تقدر تختار من القائمة السريعة.")}
-      ${renderArraySection("modules", "الوحدات القادمة", "module")}
+
+      <section class="edubia-edit-section"><h3>الملاحظات والواجب</h3><div class="edubia-edit-grid">
+        ${field("fields.teacherNote", "ملاحظات المعلم", f.teacherNote, "textarea", true)}
+        ${field("fields.homework", "الخطوة الجاية", f.homework, "textarea", true)}
+      </div></section>
+
+      <section class="edubia-edit-section"><h3>الشارات المكتسبة</h3>
+        <small>اضغط “قائمة الإيموجيز” لاختيار إيموجي، أو اكتب/الصق أي Emoji مباشرة في خانة الإيموجي.</small>
+        ${renderArrayRows("badges", "badge")}
+        <button type="button" class="edubia-array-add" data-editor-action="add" data-array="badges">+ إضافة شارة</button>
+      </section>
+
+      <section class="edubia-edit-section"><h3>الوحدات القادمة</h3>
+        ${renderArrayRows("modules", "module")}
+        <button type="button" class="edubia-array-add" data-editor-action="add" data-array="modules">+ إضافة وحدة</button>
+      </section>
     `;
+  }
+
+  function renderArrayRows(arrayName, type) {
+    const items = Array.isArray(editorState[arrayName]) ? editorState[arrayName] : [];
+    return items.map((item, index) => renderArrayRow(arrayName, item, index, type)).join("");
   }
 
   function renderArraySection(arrayName, title, type, hint = "") {
@@ -1278,38 +1353,41 @@
     return `<section class="edubia-edit-section"><h3>${escapeHtml(title)}</h3>${hint ? `<small>${escapeHtml(hint)}</small>` : ""}${items.map((item, index) => renderArrayRow(arrayName, item, index, type)).join("")}<button type="button" class="edubia-array-add" data-editor-action="add" data-array="${arrayName}">+ إضافة</button></section>`;
   }
 
+  function renderEmojiDropdown(path) {
+    return `<details class="emoji-dropdown"><summary>قائمة الإيموجيز</summary><div class="emoji-grid">${EDITOR_EMOJIS.map(e => `<button type="button" data-emoji="${escapeHtml(e)}" data-emoji-path="${path}">${escapeHtml(e)}</button>`).join("")}</div></details>`;
+  }
+
   function renderArrayRow(arrayName, item, index, type) {
     if (type === "badge") {
-      return `<div class="edubia-edit-row badge">
-        <div class="edubia-edit-field"><label>Emoji</label><input data-path="${arrayName}.${index}.ic" value="${escapeHtml(item.ic || "🏅")}" /></div>
-        <div class="edubia-edit-field"><label>العنوان</label><input data-path="${arrayName}.${index}.t_ar" value="${escapeHtml(item.t_ar || "")}" /></div>
-        <div class="edubia-edit-field"><label>الوصف</label><input data-path="${arrayName}.${index}.d_ar" value="${escapeHtml(item.d_ar || "")}" /></div>
+      return `<div class="edubia-edit-row edubia-badge-row">
         <button type="button" class="edubia-row-remove" data-editor-action="remove" data-array="${arrayName}" data-index="${index}">×</button>
-        <div class="emoji-pick" style="grid-column:1/-1">${EDITOR_EMOJIS.map(e => `<button type="button" data-emoji="${escapeHtml(e)}" data-emoji-path="${arrayName}.${index}.ic">${escapeHtml(e)}</button>`).join("")}</div>
+        <div class="edubia-edit-field title-field"><label>اسم الشارة</label><input data-path="${arrayName}.${index}.t_ar" value="${escapeHtml(item.t_ar || "")}" /></div>
+        <div class="edubia-edit-field emoji-field"><label>Emoji</label><input data-path="${arrayName}.${index}.ic" value="${escapeHtml(item.ic || "🏅")}" /></div>
+        <div class="edubia-edit-field desc-field"><label>وصف الشارة</label><textarea data-path="${arrayName}.${index}.d_ar">${escapeHtml(item.d_ar || "")}</textarea></div>
+        ${renderEmojiDropdown(`${arrayName}.${index}.ic`)}
       </div>`;
     }
     if (type === "lesson") {
       return `<div class="edubia-edit-row">
-        <div class="edubia-edit-field"><label>#</label><input value="${index + 1}" disabled /></div>
-        <div class="edubia-edit-field"><label>الدرس</label><input data-path="${arrayName}.${index}.ar" value="${escapeHtml(item.ar || "")}" /></div>
-        <div class="edubia-edit-field"><label>الدرجة</label><input data-path="${arrayName}.${index}.grade" value="${escapeHtml(item.grade || "")}" /></div>
         <button type="button" class="edubia-row-remove" data-editor-action="remove" data-array="${arrayName}" data-index="${index}">×</button>
+        <div class="edubia-edit-field wide"><label>الدرس</label><input data-path="${arrayName}.${index}.ar" value="${escapeHtml(item.ar || "")}" /></div>
+        <div class="edubia-edit-field"><label>الدرجة</label><input data-path="${arrayName}.${index}.grade" value="${escapeHtml(item.grade || "")}" /></div>
+        <div class="edubia-edit-field full"><label>الاختبار</label><input data-path="${arrayName}.${index}.quiz" value="${escapeHtml(item.quiz || "—")}" /></div>
       </div>`;
     }
     if (type === "module") {
-      return `<div class="edubia-edit-row module">
-        <div class="edubia-edit-field"><label>الوحدة</label><input data-path="${arrayName}.${index}.ar" value="${escapeHtml(item.ar || "")}" /></div>
-        <div class="edubia-edit-field"><label>الحالة</label><input data-path="${arrayName}.${index}.status" value="${escapeHtml(item.status || "soon")}" /></div>
-        <div class="edubia-edit-field"><label>%</label><input type="number" data-path="${arrayName}.${index}.pct" value="${escapeHtml(item.pct ?? 0)}" /></div>
+      return `<div class="edubia-edit-row edubia-module-row">
         <button type="button" class="edubia-row-remove" data-editor-action="remove" data-array="${arrayName}" data-index="${index}">×</button>
-        <div class="edubia-edit-field full" style="grid-column:1/-1"><label>الوصف</label><textarea data-path="${arrayName}.${index}.d_ar">${escapeHtml(item.d_ar || "")}</textarea></div>
+        <div class="edubia-edit-field module-title"><label>الوحدة</label><input data-path="${arrayName}.${index}.ar" value="${escapeHtml(item.ar || "")}" /></div>
+        <div class="edubia-edit-field module-pct"><label>%</label><input type="number" data-path="${arrayName}.${index}.pct" value="${escapeHtml(item.pct ?? 0)}" /></div>
+        <div class="edubia-edit-field module-status"><label>الحالة</label><input data-path="${arrayName}.${index}.status" value="${escapeHtml(item.status || "soon")}" /></div>
+        <div class="edubia-edit-field module-desc"><label>الوصف</label><textarea data-path="${arrayName}.${index}.d_ar">${escapeHtml(item.d_ar || "")}</textarea></div>
       </div>`;
     }
     return `<div class="edubia-edit-row">
-      <div class="edubia-edit-field"><label>#</label><input value="${index + 1}" disabled /></div>
-      <div class="edubia-edit-field"><label>الاسم</label><input data-path="${arrayName}.${index}.ar" value="${escapeHtml(item.ar || "")}" /></div>
-      <div class="edubia-edit-field"><label>القيمة</label><input type="number" step="0.1" data-path="${arrayName}.${index}.v" value="${escapeHtml(item.v ?? 0)}" /></div>
       <button type="button" class="edubia-row-remove" data-editor-action="remove" data-array="${arrayName}" data-index="${index}">×</button>
+      <div class="edubia-edit-field wide"><label>${type === "session" ? "الجلسة" : "الاسم"}</label><input data-path="${arrayName}.${index}.ar" value="${escapeHtml(item.ar || "")}" /></div>
+      <div class="edubia-edit-field"><label>القيمة</label><input type="number" step="0.1" data-path="${arrayName}.${index}.v" value="${escapeHtml(item.v ?? 0)}" /></div>
     </div>`;
   }
 
@@ -1344,7 +1422,16 @@
     editorState = buildReportData(payload || {});
     renderEditorForm();
     renderEditorPreview();
-    if (typeof dialog.showModal === "function" && !dialog.open) dialog.showModal();
+    if (!dialog.open) {
+      try {
+        if (typeof dialog.showModal === "function") dialog.showModal();
+        else if (typeof dialog.show === "function") dialog.show();
+        else dialog.setAttribute("open", "");
+      } catch (error) {
+        if (typeof dialog.show === "function") dialog.show();
+        else dialog.setAttribute("open", "");
+      }
+    }
   }
 
   window.EdubiaReport = {
