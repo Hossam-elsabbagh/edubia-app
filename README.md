@@ -1,30 +1,39 @@
-# Edubia React Instructor Hub — GitHub/Vercel Update
+# Edubia React Instructor Hub — Version 1.2.0
 
-React + Vite replacement for the original Edubia static app, configured to continue using the **same existing Supabase database**.
+React + Vite application configured to continue using the existing Edubia Supabase database.
 
-## Features
+## Main features
 
-- Multi-instructor sign-up and sign-in.
-- Private students and sessions for every instructor using Supabase RLS.
-- Animated responsive dashboard.
-- Student and session management.
-- Clear **Details** button and full student profile/session overview.
-- **Available / Busy** controls for every empty weekly time slot.
-- Full session **Feedback** with scores, notes, edit/delete, print/PDF, and JSON export.
-- Daily **FOLLOW UP** attendance with Attended/Absent radio buttons.
-- Monthly Excel export with dates, days, student names, statuses, and Paid/Cover/Free summaries.
-- Read-only coordinator link per instructor.
-- Light and dark mode.
+- Multi-instructor sign-up and sign-in with private Supabase RLS workspaces.
+- Animated weekly schedule with Paid, Cover, and Free sessions.
+- Busy / Available controls for empty time slots.
+- Student details and full lesson feedback management.
+- Daily FOLLOW UP attendance and monthly Excel reports.
+- Read-only coordinator link with:
+  - Complete Busy / Available schedule status.
+  - Weekly available-time reminder.
+  - All student feedback with student filtering.
+  - Direct feedback PDF download.
+- Direct PDF creation without browser pop-ups.
+- New high-resolution Edubia logo and clearer Manrope typography.
 
-## Existing database upgrade
+## Existing database
 
-Do **not** run `database.sql` on the old database. Run this file once instead:
+For an existing upgraded database, run this once in Supabase SQL Editor:
+
+```text
+RUN_ONCE_COORDINATOR_FEATURES_UPGRADE.sql
+```
+
+This only adds coordinator read functions and does not delete or update existing business rows.
+
+If the database has never received the React multi-instructor upgrade, run:
 
 ```text
 RUN_ONCE_SAFE_DATABASE_UPGRADE.sql
 ```
 
-The migration first copies the old business tables into a private `edubia_backup` schema and then upgrades the existing schema without deleting student/session data.
+Do not run `database.sql` on the old database. It is only for a brand-new empty Supabase project.
 
 ## Local run
 
@@ -35,12 +44,11 @@ npm run dev
 
 ## Vercel
 
-Vercel detects Vite automatically. The included `vercel.json` defines the production build and SPA fallback.
-
 ```text
+Framework: Vite
 Build command: npm run build
 Output directory: dist
 Root directory: ./
 ```
 
-See `FEATURE_UPDATE_AR.md` and `DEPLOY_GITHUB_VERCEL_AR.md` for the complete Arabic update steps.
+See `COORDINATOR_UPDATE_AR.md` for the complete Arabic deployment instructions.

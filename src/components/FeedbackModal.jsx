@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Download, Edit3, FileText, MessageSquareText, Plus, Printer, Star, Trash2 } from 'lucide-react';
+import { Download, Edit3, FileDown, FileText, MessageSquareText, Plus, Star, Trash2 } from 'lucide-react';
 import Modal from './Modal';
 import { useData } from '../context/DataContext';
 import { toISODate } from '../utils/date';
+import { downloadFeedbackPdf, feedbackPdfFileName } from '../utils/pdf';
 
 const emptyFeedback = {
   student_id: '',
@@ -37,15 +38,6 @@ function sessionKey(value, course = '') {
   return `${String(value || '').trim().toLowerCase()}::${String(course || '').trim().toLowerCase()}`;
 }
 
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
-
 function averageScore(item) {
   const values = scoreFields.map(([key]) => Number(item[key] || 0));
   return (values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1);
@@ -57,6 +49,7 @@ export default function FeedbackModal({ open, student, onClose }) {
   const [editingId, setEditingId] = useState(null);
   const [selectedSession, setSelectedSession] = useState('all');
   const [saving, setSaving] = useState(false);
+  const [creatingPdf, setCreatingPdf] = useState(false);
 
   const studentSessions = useMemo(
     () => sessions.filter((session) => session.student_id === student?.id),
@@ -181,28 +174,21 @@ export default function FeedbackModal({ open, student, onClose }) {
     URL.revokeObjectURL(url);
   }
 
-  function printReport() {
-    const reportWindow = window.open('', '_blank');
-    if (!reportWindow) {
-      notify('Allow pop-ups to print the feedback report.', 'error');
-      return;
+  async function downloadPdf() {
+    setCreatingPdf(true);
+    try {
+      await downloadFeedbackPdf({
+        title: `${student.name} — Feedback Report`,
+        subtitle: `${visibleFeedback.length} feedback record(s)`,
+        records: visibleFeedback,
+        fileName: feedbackPdfFileName(student.name),
+      });
+      notify('Feedback PDF downloaded successfully.');
+    } catch (error) {
+      notify(error.message || 'Could not create the PDF report.', 'error');
+    } finally {
+      setCreatingPdf(false);
     }
-    reportWindow.opener = null;
-    const cards = visibleFeedback.map((item) => `
-      <article>
-        <header><h2>${escapeHtml(item.lesson_title)}</h2><strong>${escapeHtml(item.date)}</strong></header>
-        <p><b>${escapeHtml(item.course)}</b> · Session ${escapeHtml(item.session_number)} · ${escapeHtml(item.attendance)}</p>
-        <p>Average score: <b>${averageScore(item)} / 5</b></p>
-        <div class="grid">
-          <p><b>Explained</b><br>${escapeHtml(item.explained || '-')}</p>
-          <p><b>Strengths</b><br>${escapeHtml(item.strengths || '-')}</p>
-          <p><b>Improvement areas</b><br>${escapeHtml(item.improvement_areas || '-')}</p>
-        </div>
-      </article>`).join('');
-    reportWindow.document.write(`<!doctype html><html><head><title>${escapeHtml(student.name)} Feedback</title><style>
-      body{font-family:Arial,sans-serif;color:#182035;padding:36px;line-height:1.55}h1{margin:0}.sub{color:#667085;margin:5px 0 25px}article{border:1px solid #dfe3ec;border-radius:14px;padding:18px;margin:0 0 16px;break-inside:avoid}header{display:flex;justify-content:space-between;gap:20px}h2{font-size:18px;margin:0}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.grid p{background:#f6f7fb;padding:12px;border-radius:10px}@media print{body{padding:0}}@media(max-width:700px){.grid{grid-template-columns:1fr}}
-    </style></head><body><h1>${escapeHtml(student.name)} — Feedback Report</h1><p class="sub">${visibleFeedback.length} feedback record(s)</p>${cards || '<p>No feedback records.</p>'}<script>window.onload=()=>window.print()<\/script></body></html>`);
-    reportWindow.document.close();
   }
 
   if (!student) return null;
@@ -211,7 +197,7 @@ export default function FeedbackModal({ open, student, onClose }) {
     <Modal
       open={open}
       title={`${student.name} — Feedback`}
-      subtitle="Add, review, edit, print, and download feedback for every lesson."
+      subtitle="Add, review, edit, and download a PDF or JSON report for every lesson."
       onClose={onClose}
       size="wide"
     >
@@ -225,7 +211,7 @@ export default function FeedbackModal({ open, student, onClose }) {
           ))}
         </div>
         <div className="feedback-export-actions">
-          <button className="button ghost compact" type="button" onClick={printReport}><Printer size={16} /> Print / PDF</button>
+          <button className="button ghost compact" type="button" onClick={downloadPdf} disabled={creatingPdf}><FileDown size={16} /> {creatingPdf ? 'Creating PDF…' : 'Download PDF'}</button>
           <button className="button ghost compact" type="button" onClick={downloadJson}><Download size={16} /> JSON</button>
         </div>
       </div>

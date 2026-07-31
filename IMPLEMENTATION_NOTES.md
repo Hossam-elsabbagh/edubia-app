@@ -29,12 +29,3 @@ For the existing Edubia Supabase project, run:
 ```text
 database_update_existing_supabase_react.sql
 ```
-
-## Details, availability, and feedback update
-
-- Added per-student Details modal with session management and value summaries.
-- Restored instructor-scoped feedback CRUD using the existing `feedback` table.
-- Restored Available / Busy controls using the existing `unavailable_slots` table.
-- Added blocked/booked time validation to session creation and editing.
-- Added feedback print/PDF and JSON export.
-- Updated typography to Manrope + Cairo and reorganized student cards.
