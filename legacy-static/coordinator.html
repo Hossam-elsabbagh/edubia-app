@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edubia Coordinator View</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="top-bar">
+      <div>
+        <p class="company">Edubia Coordinator View</p>
+        <h1>Schedule & Feedback</h1>
+        <p class="instructor">Instructor: <strong>Hossam Nabil Elsabbagh</strong></p>
+      </div>
+
+      <div class="top-actions" id="coordinatorActions">
+        <button class="secondary-btn" id="refreshBtn">Refresh</button>
+        <span class="live-note">Public read-only link · Auto-refresh every 10 seconds</span>
+      </div>
+    </section>
+
+    <section id="coordinatorContent">
+      <section class="info-box">
+        <strong>Read-only page</strong>
+        <p>This public coordinator link opens directly without login. It only shows the schedule, feedback, available slots, and session status colors. Prices and private payment details are hidden.</p>
+      </section>
+
+      <section class="legend-panel">
+        <span><i class="available-dot"></i> Available</span>
+        <span><i class="unavailable-dot"></i> Unavailable</span>
+        <span><i class="paid-dot"></i> Paid</span>
+        <span><i class="cover-dot"></i> Cover / Covered</span>
+        <span><i class="free-dot"></i> Free</span>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <h2>Schedule</h2>
+            <p>Saturday to Friday, from 2 PM to 10 PM.</p>
+          </div>
+          <input id="publicSearch" class="search-input" type="search" placeholder="Search student or course..." />
+        </div>
+
+        <div class="schedule-wrapper">
+          <table class="schedule-table" id="publicScheduleTable"></table>
+        </div>
+      </section>
+
+      <section class="panel available-week-box">
+        <h2>Available time in week</h2>
+        <p>These are the empty slots that are still available in each day.</p>
+        <div class="available-week-list" id="availableWeekList"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <h2>Feedback</h2>
+            <p>Students are grouped below. Click a student name, then choose the feedback/session you want to view.</p>
+          </div>
+        </div>
+
+        <div class="public-feedback-layout" id="publicFeedbackBody"></div>
+      </section>
+    </section>
+  </main>
+
+
+
+  <dialog class="modal" id="coordinatorDownloadModal">
+    <form method="dialog" class="modal-card download-card" id="coordinatorDownloadForm">
+      <div class="modal-header">
+        <div>
+          <p class="company small">Download Feedback</p>
+          <h3 id="coordinatorDownloadStudentName">Download Report</h3>
+        </div>
+        <button type="button" class="icon-btn" id="closeCoordinatorDownloadModal">×</button>
+      </div>
+
+      <p class="download-help">اختار مدى الجلسات، ثم استخدم الأزرار: PDF / JSON / Edit. زر Edit يفتح نفس التقرير للتعديل قبل التحميل.</p>
+
+      <div class="form-grid download-range-grid">
+        <label>
+          From Session
+          <input id="coordinatorDownloadFromSession" type="number" min="1" placeholder="Example: 1" />
+        </label>
+        <label>
+          To Session
+          <input id="coordinatorDownloadToSession" type="number" min="1" placeholder="Example: 8" />
+        </label>
+      </div>
+
+      <small class="hint">Leave both fields empty to download all saved feedback for this student.</small>
+
+      <div class="download-format-grid">
+        <button type="submit" class="primary-btn" data-format="pdf">PDF حفظ / طباعة 🖨️</button>
+        <button type="submit" class="secondary-btn" data-format="json">JSON حفظ 📄</button>
+        <button type="submit" class="secondary-btn" data-format="edit">Edit ✏️</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="config.js"></script>
+  <script src="report.js"></script>
+  <script src="coordinator.js"></script>
+</body>
+</html>
