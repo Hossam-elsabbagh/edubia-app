@@ -5,7 +5,7 @@ import { useData } from '../context/DataContext';
 import { toISODate } from '../utils/date';
 
 export default function SessionModal({ open, session, initialStudentId = '', onClose }) {
-  const { students, saveSession, notify } = useData();
+  const { students, sessions, unavailableSlots, saveSession, notify } = useData();
   const [form, setForm] = useState(emptySession);
   const [customCourse, setCustomCourse] = useState('');
   const [saving, setSaving] = useState(false);
@@ -32,6 +32,30 @@ export default function SessionModal({ open, session, initialStudentId = '', onC
 
   const courseValue = useMemo(() => (form.course === 'Other' ? customCourse : form.course), [form.course, customCourse]);
 
+  const hourOptions = useMemo(() => HOURS.map((hour) => {
+    const currentSlot = session && session.day === form.day && Number(session.hour) === Number(hour);
+    const manuallyBlocked = unavailableSlots.some((slot) => slot.day === form.day && Number(slot.hour) === Number(hour));
+    const conflictingSession = sessions.find((item) => (
+      item.id !== session?.id
+      && item.day === form.day
+      && Number(item.hour) === Number(hour)
+      && (item.type === 'paid' || form.type === 'paid' || item.session_date === form.session_date)
+    ));
+    return {
+      hour,
+      disabled: !currentSlot && (manuallyBlocked || Boolean(conflictingSession)),
+      suffix: manuallyBlocked ? 'Unavailable' : conflictingSession ? 'Booked' : '',
+    };
+  }), [form.day, form.type, form.session_date, session, sessions, unavailableSlots]);
+
+  const selectableHours = hourOptions.filter((option) => !option.disabled).map((option) => option.hour);
+  const selectableHoursKey = selectableHours.join(',');
+
+  useEffect(() => {
+    if (!open || !selectableHours.length || selectableHours.includes(Number(form.hour))) return;
+    setForm((current) => ({ ...current, hour: selectableHours[0] }));
+  }, [open, form.hour, selectableHoursKey]);
+
   function updateType(type) {
     setForm({ ...form, type, price: DEFAULT_PRICES[type], session_date: type === 'paid' ? '' : form.session_date || toISODate() });
   }
@@ -54,7 +78,7 @@ export default function SessionModal({ open, session, initialStudentId = '', onC
     <Modal
       open={open}
       title={session ? 'Edit session' : 'Add session'}
-      subtitle="Paid sessions repeat weekly. Cover and free sessions use a specific date."
+      subtitle="Paid sessions repeat weekly. Busy and unavailable times cannot be selected."
       onClose={onClose}
       size="large"
     >
@@ -107,9 +131,11 @@ export default function SessionModal({ open, session, initialStudentId = '', onC
           </label>
           <label>
             <span>Time</span>
-            <select value={form.hour} onChange={(e) => setForm({ ...form, hour: Number(e.target.value) })}>
-              {HOURS.map((hour) => <option key={hour} value={hour}>{hour > 12 ? hour - 12 : hour}:00 PM</option>)}
+            <select value={form.hour} disabled={!selectableHours.length} onChange={(e) => setForm({ ...form, hour: Number(e.target.value) })}>
+              {!selectableHours.length && <option value="">No available time</option>}
+              {hourOptions.map(({ hour, disabled, suffix }) => <option key={hour} value={hour} disabled={disabled}>{hour > 12 ? hour - 12 : hour}:00 PM{suffix ? ` — ${suffix}` : ''}</option>)}
             </select>
+            <small className="field-hint">Booked or manually blocked hours are shown but disabled.</small>
           </label>
           <label>
             <span>Specific date</span>
@@ -118,7 +144,7 @@ export default function SessionModal({ open, session, initialStudentId = '', onC
         </div>
         <footer className="modal-actions">
           <button className="button ghost" type="button" onClick={onClose}>Cancel</button>
-          <button className="button primary" type="submit" disabled={saving || !students.length}>{saving ? 'Saving…' : 'Save session'}</button>
+          <button className="button primary" type="submit" disabled={saving || !students.length || !selectableHours.length}>{saving ? 'Saving…' : 'Save session'}</button>
         </footer>
       </form>
     </Modal>

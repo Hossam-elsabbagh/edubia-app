@@ -11,6 +11,8 @@ export function DataProvider({ children }) {
   const [students, setStudents] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [attendance, setAttendance] = useState([]);
+  const [feedback, setFeedback] = useState([]);
+  const [unavailableSlots, setUnavailableSlots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState(null);
 
@@ -22,13 +24,15 @@ export function DataProvider({ children }) {
   const refresh = useCallback(async () => {
     if (!instructorId || !supabase) return;
     setLoading(true);
-    const [studentsResult, sessionsResult, attendanceResult] = await Promise.all([
+    const [studentsResult, sessionsResult, attendanceResult, feedbackResult, unavailableResult] = await Promise.all([
       supabase.from('students').select('*').order('name'),
       supabase.from('sessions').select('*').order('day').order('hour'),
       supabase.from('attendance').select('*').order('attendance_date', { ascending: false }),
+      supabase.from('feedback').select('*').order('date', { ascending: false }).order('created_at', { ascending: false }),
+      supabase.from('unavailable_slots').select('*').order('day').order('hour'),
     ]);
 
-    const error = studentsResult.error || sessionsResult.error || attendanceResult.error;
+    const error = studentsResult.error || sessionsResult.error || attendanceResult.error || feedbackResult.error || unavailableResult.error;
     if (error) {
       notify(error.message, 'error');
       setLoading(false);
@@ -38,6 +42,8 @@ export function DataProvider({ children }) {
     setStudents(studentsResult.data || []);
     setSessions(sessionsResult.data || []);
     setAttendance(attendanceResult.data || []);
+    setFeedback(feedbackResult.data || []);
+    setUnavailableSlots(unavailableResult.data || []);
     setLoading(false);
   }, [instructorId, notify]);
 
@@ -87,6 +93,14 @@ export function DataProvider({ children }) {
     );
     if (collision) throw new Error('This time slot is already booked.');
 
+    const blocked = unavailableSlots.some(
+      (slot) => slot.day === payload.day && Number(slot.hour) === payload.hour,
+    );
+    const isCurrentSlot = id && sessions.some(
+      (item) => item.id === id && item.day === payload.day && Number(item.hour) === payload.hour,
+    );
+    if (blocked && !isCurrentSlot) throw new Error('This time slot is marked unavailable. Make it available first.');
+
     const query = id
       ? supabase.from('sessions').update(payload).eq('id', id)
       : supabase.from('sessions').insert(payload);
@@ -101,6 +115,70 @@ export function DataProvider({ children }) {
     if (error) throw error;
     await refresh();
     notify('Session deleted.');
+  }
+
+  async function markSlotUnavailable(day, hour) {
+    const hasSession = sessions.some((item) => item.day === day && Number(item.hour) === Number(hour));
+    if (hasSession) throw new Error('This slot already contains a session and is already busy.');
+
+    const { error } = await supabase
+      .from('unavailable_slots')
+      .upsert(
+        { instructor_id: instructorId, day, hour: Number(hour) },
+        { onConflict: 'instructor_id,day,hour' },
+      );
+    if (error) throw error;
+    await refresh();
+    notify(`${day} at ${Number(hour) > 12 ? Number(hour) - 12 : Number(hour)}:00 marked busy.`);
+  }
+
+  async function markSlotAvailable(day, hour) {
+    const { error } = await supabase
+      .from('unavailable_slots')
+      .delete()
+      .eq('day', day)
+      .eq('hour', Number(hour));
+    if (error) throw error;
+    await refresh();
+    notify(`${day} at ${Number(hour) > 12 ? Number(hour) - 12 : Number(hour)}:00 is available again.`);
+  }
+
+  async function saveFeedback(values, id = null) {
+    const payload = {
+      instructor_id: instructorId,
+      student_id: values.student_id,
+      date: values.date,
+      course: values.course.trim(),
+      session_number: String(values.session_number).trim(),
+      lesson_title: values.lesson_title.trim(),
+      attendance: values.attendance,
+      commitment_score: Number(values.commitment_score),
+      understanding_score: Number(values.understanding_score),
+      problem_solving_score: Number(values.problem_solving_score),
+      practical_score: Number(values.practical_score),
+      exercise_score: Number(values.exercise_score),
+      participation_score: Number(values.participation_score),
+      has_homework: values.has_homework,
+      previous_homework: values.previous_homework,
+      explained: values.explained?.trim() || null,
+      strengths: values.strengths?.trim() || null,
+      improvement_areas: values.improvement_areas?.trim() || null,
+    };
+
+    const query = id
+      ? supabase.from('feedback').update(payload).eq('id', id)
+      : supabase.from('feedback').insert(payload);
+    const { error } = await query;
+    if (error) throw error;
+    await refresh();
+    notify(id ? 'Feedback updated successfully.' : 'Feedback saved successfully.');
+  }
+
+  async function deleteFeedback(id) {
+    const { error } = await supabase.from('feedback').delete().eq('id', id);
+    if (error) throw error;
+    await refresh();
+    notify('Feedback deleted.');
   }
 
   async function saveAttendance(rows) {
@@ -145,6 +223,8 @@ export function DataProvider({ children }) {
       students,
       sessions,
       attendance,
+      feedback,
+      unavailableSlots,
       loading,
       notice,
       notify,
@@ -153,10 +233,14 @@ export function DataProvider({ children }) {
       deleteStudent,
       saveSession,
       deleteSession,
+      markSlotUnavailable,
+      markSlotAvailable,
+      saveFeedback,
+      deleteFeedback,
       saveAttendance,
       getMonthAttendance,
     }),
-    [students, sessions, attendance, loading, notice, notify, refresh],
+    [students, sessions, attendance, feedback, unavailableSlots, loading, notice, notify, refresh],
   );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

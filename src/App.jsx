@@ -14,7 +14,7 @@ import './styles.css';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/students', label: 'Students', icon: Users },
+  { to: '/students', label: 'Students & Feedback', icon: Users },
   { to: '/follow-up', label: 'FOLLOW UP', icon: ClipboardCheck },
 ];
 

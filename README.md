@@ -8,6 +8,9 @@ React + Vite replacement for the original Edubia static app, configured to conti
 - Private students and sessions for every instructor using Supabase RLS.
 - Animated responsive dashboard.
 - Student and session management.
+- Clear **Details** button and full student profile/session overview.
+- **Available / Busy** controls for every empty weekly time slot.
+- Full session **Feedback** with scores, notes, edit/delete, print/PDF, and JSON export.
 - Daily **FOLLOW UP** attendance with Attended/Absent radio buttons.
 - Monthly Excel export with dates, days, student names, statuses, and Paid/Cover/Free summaries.
 - Read-only coordinator link per instructor.
@@ -40,4 +43,4 @@ Output directory: dist
 Root directory: ./
 ```
 
-See `DEPLOY_GITHUB_VERCEL_AR.md` for the complete Arabic update steps.
+See `FEATURE_UPDATE_AR.md` and `DEPLOY_GITHUB_VERCEL_AR.md` for the complete Arabic update steps.
