@@ -124,7 +124,10 @@ function RootRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider><RootRoutes /></AuthProvider>
+      <AuthProvider>
+        <RootRoutes />
+        <div className="developer-credit" aria-label="Developer credit">Developed by Hossam</div>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

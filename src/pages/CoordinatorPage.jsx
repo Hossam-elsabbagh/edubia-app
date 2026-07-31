@@ -5,6 +5,7 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
+  Download,
   FileDown,
   MessageSquareText,
   ShieldCheck,
@@ -14,11 +15,20 @@ import {
 import { DAYS, HOURS, TYPE_LABELS } from '../constants';
 import { supabase } from '../lib/supabase';
 import { formatHour } from '../utils/date';
+import { downloadFeedbackJson } from '../utils/feedbackExport';
 import { averageFeedbackScore, downloadFeedbackPdf, feedbackPdfFileName } from '../utils/pdf';
 import Loader from '../components/Loader';
 
 function currentDayName() {
   return new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date());
+}
+
+function normalizeSession(session) {
+  return {
+    ...session,
+    hour: Number(session.hour),
+    type: session.type === 'covered' ? 'cover' : session.type,
+  };
 }
 
 export default function CoordinatorPage() {
@@ -36,13 +46,9 @@ export default function CoordinatorPage() {
   const [featureWarning, setFeatureWarning] = useState('');
 
   useEffect(() => {
-    async function load() {
-      if (!token || !supabase) {
-        setError('This coordinator link is missing or invalid.');
-        setLoading(false);
-        return;
-      }
+    let cancelled = false;
 
+    async function loadWithLegacyFunctions() {
       const [profileResult, scheduleResult, unavailableResult, feedbackResult] = await Promise.all([
         supabase.rpc('get_public_instructor', { access_token: token }),
         supabase.rpc('get_public_schedule', { access_token: token }),
@@ -51,55 +57,129 @@ export default function CoordinatorPage() {
       ]);
 
       if (profileResult.error || scheduleResult.error) {
-        setError(profileResult.error?.message || scheduleResult.error?.message || 'Could not open the coordinator view.');
-      } else {
-        setProfile(profileResult.data?.[0] || null);
-        setSessions(scheduleResult.data || []);
+        throw new Error(profileResult.error?.message || scheduleResult.error?.message || 'Could not open the coordinator view.');
       }
 
       const optionalErrors = [unavailableResult.error, feedbackResult.error].filter(Boolean);
-      if (optionalErrors.length) {
-        setFeatureWarning('The coordinator database upgrade is still required before availability and feedback can be displayed.');
-      }
-      setUnavailableSlots(unavailableResult.data || []);
-      setFeedback(feedbackResult.data || []);
-      setLoading(false);
+      return {
+        profile: profileResult.data?.[0] || null,
+        sessions: scheduleResult.data || [],
+        unavailableSlots: unavailableResult.data || [],
+        feedback: feedbackResult.data || [],
+        warning: optionalErrors.length
+          ? 'Run RUN_ONCE_COORDINATOR_SYNC_FIX.sql in Supabase so Busy slots and feedback can be synchronized.'
+          : '',
+      };
     }
+
+    async function load() {
+      if (!token || !supabase) {
+        setError('This coordinator link is missing or invalid.');
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError('');
+      setFeatureWarning('');
+
+      try {
+        // The combined JSON RPC keeps schedule, Busy slots, and feedback in one
+        // synchronized read and avoids legacy PostgreSQL return-type conflicts.
+        const workspaceResult = await supabase.rpc('get_public_coordinator_workspace', { access_token: token });
+        let result;
+
+        if (!workspaceResult.error && workspaceResult.data) {
+          const workspace = workspaceResult.data;
+          result = {
+            profile: workspace.profile || null,
+            sessions: workspace.sessions || [],
+            unavailableSlots: workspace.unavailable_slots || [],
+            feedback: workspace.feedback || [],
+            warning: '',
+          };
+        } else {
+          result = await loadWithLegacyFunctions();
+        }
+
+        if (cancelled) return;
+        if (!result.profile) {
+          setError('This coordinator link is invalid or has been replaced.');
+        } else {
+          setProfile(result.profile);
+          setSessions((result.sessions || []).map(normalizeSession));
+          setUnavailableSlots((result.unavailableSlots || []).map((slot) => ({ ...slot, hour: Number(slot.hour) })));
+          setFeedback(result.feedback || []);
+          setFeatureWarning(result.warning || '');
+        }
+      } catch (loadError) {
+        if (!cancelled) setError(loadError.message || 'Could not open the coordinator view.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
     load();
+    return () => { cancelled = true; };
   }, [token]);
 
   const today = currentDayName();
-  const groupedSessions = useMemo(
-    () => new Map(sessions.map((session) => [`${session.day}-${Number(session.hour)}`, session])),
-    [sessions],
-  );
+  const sessionsBySlot = useMemo(() => {
+    const map = new Map();
+    sessions.forEach((session) => {
+      const key = `${session.day}-${Number(session.hour)}`;
+      const current = map.get(key) || [];
+      current.push(session);
+      map.set(key, current);
+    });
+    return map;
+  }, [sessions]);
+
   const unavailableMap = useMemo(
     () => new Set(unavailableSlots.map((slot) => `${slot.day}-${Number(slot.hour)}`)),
     [unavailableSlots],
   );
+
   const availableByDay = useMemo(
     () => DAYS.map((day) => ({
       day,
-      hours: HOURS.filter((hour) => !groupedSessions.has(`${day}-${hour}`) && !unavailableMap.has(`${day}-${hour}`)),
+      hours: HOURS.filter((hour) => !(sessionsBySlot.get(`${day}-${hour}`)?.length) && !unavailableMap.has(`${day}-${hour}`)),
     })),
-    [groupedSessions, unavailableMap],
+    [sessionsBySlot, unavailableMap],
   );
+
   const feedbackStudents = useMemo(() => {
     const items = new Map();
     feedback.forEach((item) => {
-      if (item.student_id && item.student_name) items.set(item.student_id, item.student_name);
+      if (item.student_id && item.student_name) items.set(String(item.student_id), item.student_name);
+    });
+    sessions.forEach((item) => {
+      if (item.student_id && item.student_name && !items.has(String(item.student_id))) {
+        items.set(String(item.student_id), item.student_name);
+      }
     });
     return [...items.entries()].sort((a, b) => a[1].localeCompare(b[1]));
-  }, [feedback]);
+  }, [feedback, sessions]);
+
   const visibleFeedback = useMemo(
-    () => selectedStudent === 'all' ? feedback : feedback.filter((item) => item.student_id === selectedStudent),
+    () => selectedStudent === 'all'
+      ? feedback
+      : feedback.filter((item) => String(item.student_id) === String(selectedStudent)),
     [feedback, selectedStudent],
   );
+
+  const visibleSessions = useMemo(
+    () => selectedStudent === 'all'
+      ? sessions
+      : sessions.filter((item) => String(item.student_id) === String(selectedStudent)),
+    [sessions, selectedStudent],
+  );
+
   const selectedStudentName = selectedStudent === 'all'
     ? 'All students'
-    : feedbackStudents.find(([id]) => id === selectedStudent)?.[1] || 'Student';
+    : feedbackStudents.find(([id]) => String(id) === String(selectedStudent))?.[1] || 'Student';
 
-  async function downloadCoordinatorFeedback() {
+  async function downloadCoordinatorFeedbackPdf() {
     setCreatingPdf(true);
     setPdfError('');
     try {
@@ -116,6 +196,20 @@ export default function CoordinatorPage() {
     }
   }
 
+  function downloadCoordinatorFeedbackJson() {
+    setPdfError('');
+    try {
+      downloadFeedbackJson({
+        instructorName: profile?.full_name || 'Instructor',
+        studentName: selectedStudentName,
+        sessions: visibleSessions,
+        feedback: visibleFeedback,
+      });
+    } catch (downloadError) {
+      setPdfError(downloadError.message || 'Could not create the JSON report.');
+    }
+  }
+
   if (loading) return <Loader label="Opening coordinator workspace…" />;
 
   return (
@@ -125,7 +219,7 @@ export default function CoordinatorPage() {
         <div>
           <span className="eyebrow"><ShieldCheck size={15} /> Read-only coordinator view</span>
           <h1>{profile?.full_name || 'Instructor'}’s workspace</h1>
-          <p>Review the complete schedule, current availability, and student feedback. Session prices and private account data stay hidden.</p>
+          <p>The timetable matches the instructor dashboard, but every item here is view only.</p>
         </div>
       </header>
 
@@ -144,26 +238,30 @@ export default function CoordinatorPage() {
 
           {activeView === 'schedule' ? (
             <motion.div className="coordinator-content-stack" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-              <section className="panel coordinator-schedule-panel">
-                <header className="panel-heading coordinator-panel-heading">
+              <section className="panel schedule-panel coordinator-schedule-panel">
+                <header className="panel-heading schedule-heading">
                   <div>
-                    <span className="eyebrow">Weekly calendar</span>
-                    <h2><CalendarDays size={22} /> Schedule status</h2>
-                    <p>Every cell clearly shows whether the hour is Busy or Available.</p>
+                    <span className="eyebrow">Live schedule · View only</span>
+                    <h2>Weekly instructor timetable</h2>
+                    <p>This is the same timetable shown in the instructor dashboard. Coordinator access cannot edit sessions or availability.</p>
                   </div>
-                  <div className="availability-legend">
-                    <span className="available-status"><CheckCircle2 size={14} /> Available</span>
-                    <span className="unavailable-status"><Ban size={14} /> Busy</span>
+                  <div className="schedule-legends">
+                    <div className="availability-legend">
+                      <span className="available-status"><CheckCircle2 size={14} /> Available</span>
+                      <span className="unavailable-status"><Ban size={14} /> Unavailable</span>
+                    </div>
+                    <div className="type-legend">
+                      <span className="paid-dot">Paid</span>
+                      <span className="cover-dot">Cover</span>
+                      <span className="free-dot">Free</span>
+                    </div>
                   </div>
                 </header>
 
                 <div className="schedule-scroll">
-                  <table className="schedule-grid-table coordinator-table coordinator-status-table">
+                  <table className="schedule-grid-table availability-table coordinator-view-only-table">
                     <thead>
-                      <tr>
-                        <th>Time</th>
-                        {DAYS.map((day) => <th className={day === today ? 'today-column' : ''} key={day}>{day}{day === today && <small>Today</small>}</th>)}
-                      </tr>
+                      <tr><th>Time</th>{DAYS.map((day) => <th key={day}>{day}</th>)}</tr>
                     </thead>
                     <tbody>
                       {HOURS.map((hour) => (
@@ -171,28 +269,29 @@ export default function CoordinatorPage() {
                           <th>{formatHour(hour)}</th>
                           {DAYS.map((day) => {
                             const key = `${day}-${hour}`;
-                            const item = groupedSessions.get(key);
+                            const items = sessionsBySlot.get(key) || [];
                             const isUnavailable = unavailableMap.has(key);
+
                             return (
-                              <td className={day === today ? 'today-column' : ''} key={key}>
-                                {item ? (
-                                  <div className={`session-card static coordinator-session ${item.type}`}>
-                                    <span className="coordinator-result-badge busy"><Ban size={12} /> Busy</span>
-                                    <strong>{item.student_name}</strong>
+                              <td
+                                className={items.length ? 'schedule-cell booked-cell' : isUnavailable ? 'schedule-cell unavailable-cell' : 'schedule-cell available-cell'}
+                                key={key}
+                              >
+                                {items.length ? items.map((item) => (
+                                  <div className={`session-card static ${item.type}`} key={item.id}>
+                                    <strong>{item.student_name || 'Student'}</strong>
                                     <span>{item.course} · #{item.current_session}</span>
-                                    <small>{TYPE_LABELS[item.type]}{item.session_date ? ` · ${item.session_date}` : ''}</small>
+                                    <small>{TYPE_LABELS[item.type] || item.type}{item.session_date ? ` · ${item.session_date}` : ''}</small>
                                   </div>
-                                ) : isUnavailable ? (
-                                  <div className="coordinator-slot-result busy">
-                                    <Ban size={17} />
-                                    <strong>Busy</strong>
-                                    <small>Instructor unavailable</small>
+                                )) : isUnavailable ? (
+                                  <div className="slot-state unavailable-slot coordinator-readonly-slot">
+                                    <span><Ban size={15} /> Unavailable</span>
+                                    <small>View only</small>
                                   </div>
                                 ) : (
-                                  <div className="coordinator-slot-result available">
-                                    <CheckCircle2 size={17} />
-                                    <strong>Available</strong>
-                                    <small>Open time</small>
+                                  <div className="slot-state available-slot coordinator-readonly-slot">
+                                    <span><CheckCircle2 size={15} /> Available</span>
+                                    <small>View only</small>
                                   </div>
                                 )}
                               </td>
@@ -210,7 +309,7 @@ export default function CoordinatorPage() {
                   <div>
                     <span className="eyebrow">Empty-slot reminder</span>
                     <h2><Clock3 size={22} /> Available time in week</h2>
-                    <p>These are the empty slots that are still available on each day.</p>
+                    <p>These are the empty, open slots after combining scheduled sessions and instructor Busy times.</p>
                   </div>
                 </header>
                 <div className="available-week-grid">
@@ -232,13 +331,18 @@ export default function CoordinatorPage() {
             <motion.section className="panel coordinator-feedback-panel" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
               <header className="panel-heading coordinator-panel-heading">
                 <div>
-                  <span className="eyebrow">Student progress</span>
+                  <span className="eyebrow">Student progress · View only</span>
                   <h2><MessageSquareText size={22} /> All feedback</h2>
-                  <p>Read every saved lesson report, organized by student and date.</p>
+                  <p>Select a student, review every saved lesson report, then download the same data as PDF or JSON.</p>
                 </div>
-                <button className="button primary" type="button" onClick={downloadCoordinatorFeedback} disabled={creatingPdf || !visibleFeedback.length}>
-                  <FileDown size={17} /> {creatingPdf ? 'Creating PDF…' : 'Download PDF'}
-                </button>
+                <div className="feedback-export-actions coordinator-export-actions">
+                  <button className="button ghost compact" type="button" onClick={downloadCoordinatorFeedbackPdf} disabled={creatingPdf || !visibleFeedback.length}>
+                    <FileDown size={17} /> {creatingPdf ? 'Creating PDF…' : 'Print / PDF'}
+                  </button>
+                  <button className="button ghost compact" type="button" onClick={downloadCoordinatorFeedbackJson} disabled={!visibleFeedback.length}>
+                    <Download size={17} /> JSON
+                  </button>
+                </div>
               </header>
 
               {pdfError && <div className="coordinator-inline-error">{pdfError}</div>}
@@ -261,20 +365,20 @@ export default function CoordinatorPage() {
                     <article className="coordinator-feedback-card" key={item.id}>
                       <header>
                         <div>
-                          <span className="feedback-date">{item.date}</span>
-                          <h3>{item.student_name}</h3>
-                          <h4>{item.lesson_title}</h4>
-                          <p>{item.course} · Session {item.session_number} · {item.attendance}</p>
+                          <span className="feedback-date">{item.date || 'No date'}</span>
+                          <h3>{item.student_name || 'Student'}</h3>
+                          <h4>{item.lesson_title || 'Lesson feedback'}</h4>
+                          <p>{item.course || 'Course'} · Session {item.session_number || '—'} · {item.attendance || '—'}</p>
                         </div>
                         <span className="score-badge"><Star size={14} /> {averageFeedbackScore(item)} / 5</span>
                       </header>
                       <div className="coordinator-score-row">
-                        <span>Commitment <b>{item.commitment_score}/5</b></span>
-                        <span>Understanding <b>{item.understanding_score}/5</b></span>
-                        <span>Problem solving <b>{item.problem_solving_score}/5</b></span>
-                        <span>Practical <b>{item.practical_score}/5</b></span>
-                        <span>Exercises <b>{item.exercise_score}/5</b></span>
-                        <span>Participation <b>{item.participation_score}/5</b></span>
+                        <span>Commitment <b>{item.commitment_score || '—'}/5</b></span>
+                        <span>Understanding <b>{item.understanding_score || '—'}/5</b></span>
+                        <span>Problem solving <b>{item.problem_solving_score || '—'}/5</b></span>
+                        <span>Practical <b>{item.practical_score || '—'}/5</b></span>
+                        <span>Exercises <b>{item.exercise_score || '—'}/5</b></span>
+                        <span>Participation <b>{item.participation_score || '—'}/5</b></span>
                       </div>
                       <div className="feedback-text-grid">
                         <div><span>Explained</span><p>{item.explained || '—'}</p></div>
@@ -289,7 +393,7 @@ export default function CoordinatorPage() {
                 <div className="feedback-empty">
                   <MessageSquareText size={30} />
                   <h4>No feedback available</h4>
-                  <p>No feedback has been saved for this selection yet.</p>
+                  <p>No feedback has been saved for this selection yet. If the instructor can see feedback but this page cannot, run the supplied synchronization SQL once.</p>
                 </div>
               )}
             </motion.section>

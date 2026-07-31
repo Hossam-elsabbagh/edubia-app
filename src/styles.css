@@ -745,3 +745,61 @@ input:disabled { opacity: .55; cursor: not-allowed; }
   font-size: .78rem;
   font-weight: 750;
 }
+
+/* Coordinator synchronization v1.3: same dashboard timetable, view-only actions. */
+.coordinator-view-only-table .session-card {
+  min-height: 74px;
+}
+.coordinator-readonly-slot small {
+  min-height: 28px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  color: var(--muted);
+  background: rgba(255,255,255,.78);
+  box-shadow: 0 5px 14px rgba(32, 55, 84, .06);
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .01em;
+}
+:root[data-theme="dark"] .coordinator-readonly-slot small {
+  background: rgba(16,18,27,.52);
+}
+.coordinator-export-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.coordinator-export-actions .button {
+  min-width: 132px;
+}
+
+/* Visible on every route, intentionally very small and non-interactive. */
+.developer-credit {
+  position: fixed;
+  right: 9px;
+  bottom: 5px;
+  z-index: 24;
+  padding: 2px 5px;
+  border-radius: 6px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--surface-solid) 72%, transparent);
+  font-size: 9px;
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: .01em;
+  opacity: .62;
+  pointer-events: none;
+  user-select: none;
+  backdrop-filter: blur(4px);
+}
+
+@media (max-width: 680px) {
+  .coordinator-export-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .coordinator-export-actions .button { min-width: 0; }
+  .developer-credit { right: 6px; bottom: 4px; font-size: 8px; }
+}
